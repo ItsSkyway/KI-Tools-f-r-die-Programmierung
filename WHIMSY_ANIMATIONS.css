@@ -1,0 +1,828 @@
+/* ============================================================================
+   ⚔️ CLASH ROYALE WHIMSY ENHANCEMENTS CSS
+   ============================================================================
+   
+   This CSS adds personality, delight, and engagement animations to make
+   the game feel alive. Copy-paste these styles into your index.html <style> tag.
+   
+   ============================================================================ */
+
+/* ============================================================================
+   1. VICTORY & DEFEAT CELEBRATIONS
+   ============================================================================ */
+
+/* Victory Flash - Screen celebrates with you */
+@keyframes victoryFlash {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+    background: rgba(255, 215, 0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.2);
+    background: rgba(255, 215, 0, 0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(1);
+    background: rgba(255, 215, 0, 0);
+  }
+}
+
+.victory-flash {
+  animation: victoryFlash 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Defeat Wobble - Screen shakes on loss */
+@keyframes defeatWobble {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-2deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+.defeat-wobble {
+  animation: defeatWobble 0.5s ease-in-out;
+}
+
+/* Crown Destruction - Crown explodes when tower falls */
+@keyframes crownDestruction {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0) rotateZ(0deg);
+    filter: drop-shadow(0 0 20px #FFD700);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3) translateY(-30px) rotateZ(10deg);
+    filter: drop-shadow(0 0 40px #FF6B00);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3) translateY(60px) rotateZ(180deg);
+    filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
+  }
+}
+
+.crown-destruction {
+  animation: crownDestruction 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  display: inline-block;
+  font-size: 3rem;
+  position: absolute;
+}
+
+/* Confetti falling */
+@keyframes confettiFall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotateZ(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100vh) rotateZ(360deg);
+  }
+}
+
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  z-index: 1000;
+  animation: confettiFall 3s ease-in forwards;
+}
+
+/* Score Pop Up - Numbers celebrate */
+@keyframes scorePopUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.8);
+  }
+}
+
+.score-celebration {
+  position: absolute;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  animation: scorePopUp 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ============================================================================
+   2. MICRO-INTERACTIONS - Card Play, Unit Spawn, Attacks
+   ============================================================================ */
+
+/* Card Play - Satisfying pop animation */
+@keyframes cardPlay {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(40px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.card-play-feedback {
+  animation: cardPlay 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Card Sparkle - Sparkles around played card */
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.card-sparkle {
+  position: relative;
+}
+
+.card-sparkle::before,
+.card-sparkle::after {
+  content: '✨';
+  position: absolute;
+  animation: sparkle 0.6s ease-out;
+  pointer-events: none;
+}
+
+.card-sparkle::before {
+  animation-delay: 0s;
+  top: -20px;
+  left: -20px;
+}
+
+.card-sparkle::after {
+  animation-delay: 0.1s;
+  top: -20px;
+  right: -20px;
+}
+
+/* Unit Spawn - Troops pop into existence */
+@keyframes unitSpawn {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotateZ(-180deg);
+    filter: blur(10px);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.2) rotateZ(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotateZ(0deg);
+    filter: blur(0);
+  }
+}
+
+.unit-spawn {
+  animation: unitSpawn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Staggered spawn for multiple units */
+.unit-spawn-stagger {
+  animation-delay: calc(var(--index, 0) * 0.1s);
+}
+
+/* Unit Hit - Reaction when damaged */
+@keyframes hitReaction {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(0.95) translateX(-5px);
+  }
+  75% {
+    transform: scale(1.05) translateX(5px);
+  }
+}
+
+.unit-hit {
+  animation: hitReaction 0.3s ease-in-out;
+}
+
+/* Damage Number Pop-Up - Shows damage dealt */
+@keyframes damagePopup {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    color: #FF6B6B;
+    text-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.5);
+    text-shadow: 0 0 0 rgba(255, 107, 107, 0);
+  }
+}
+
+.damage-number {
+  position: absolute;
+  font-weight: bold;
+  font-size: 1.5rem;
+  animation: damagePopup 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Healing Number Pop-Up */
+@keyframes healPopup {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    color: #4ECB71;
+    text-shadow: 0 0 10px rgba(78, 203, 113, 0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.5);
+    text-shadow: 0 0 0 rgba(78, 203, 113, 0);
+  }
+}
+
+.heal-number {
+  position: absolute;
+  font-weight: bold;
+  font-size: 1.5rem;
+  animation: healPopup 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Unit Death - Troops disappear with spin */
+@keyframes unitDeath {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotateZ(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0) rotateZ(180deg) translateY(20px);
+  }
+}
+
+.unit-death {
+  animation: unitDeath 0.5s ease-in;
+}
+
+/* Burst out particles */
+@keyframes burstOut {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(0);
+  }
+}
+
+.death-particle {
+  position: absolute;
+  animation: burstOut 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+/* ============================================================================
+   3. SPELL CAST EFFECTS
+   ============================================================================ */
+
+/* Fireball Burst */
+@keyframes fireballBurst {
+  0% {
+    opacity: 1;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.spell-explosion {
+  animation: fireballBurst 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  font-size: 4rem;
+  position: absolute;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Arrow Rain */
+@keyframes arrowRain {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px) rotateZ(0deg);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(50px) rotateZ(15deg);
+  }
+}
+
+.arrow-projectile {
+  animation: arrowRain 0.8s ease-in-out forwards;
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Generic Spell Glow */
+@keyframes spellGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(255, 200, 0, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(255, 200, 0, 0.8));
+  }
+}
+
+.spell-casting {
+  animation: spellGlow 0.5s ease-out;
+}
+
+/* ============================================================================
+   4. UI PERSONALITY - Hover Effects, Cards, Buttons
+   ============================================================================ */
+
+/* Card Hover - Lift and glow effect */
+.card-hand:hover {
+  transform: translateY(-15px) scale(1.1);
+  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.4),
+              0 0 30px rgba(100, 200, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Button Shimmer Effect */
+.button-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.button-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent);
+  transition: left 0.5s;
+}
+
+.button-shimmer:hover::before {
+  left: 100%;
+}
+
+/* Difficulty Card Flip Animation */
+@keyframes cardFlip {
+  0% {
+    transform: perspective(1000px) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(1000px) rotateY(10deg);
+  }
+}
+
+.difficulty-card:hover {
+  animation: cardFlip 0.6s ease-in-out infinite alternate;
+}
+
+/* ============================================================================
+   5. ELIXIR & STATUS INDICATORS
+   ============================================================================ */
+
+/* Card Ready - Pulsating glow when playable */
+@keyframes cardReady {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(100, 255, 100, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(100, 255, 100, 0.9);
+    transform: scale(1.05);
+  }
+}
+
+.card-ready {
+  animation: cardReady 0.6s ease-in-out infinite;
+}
+
+/* Elixir Low Warning */
+@keyframes elixirWarning {
+  0%, 100% {
+    background: rgba(100, 100, 255, 0.3);
+  }
+  50% {
+    background: rgba(255, 50, 50, 0.3);
+  }
+}
+
+.elixir-low {
+  animation: elixirWarning 0.5s ease-in-out infinite;
+}
+
+/* Elixir Fully Charged */
+@keyframes elixirFull {
+  0%, 100% {
+    filter: drop-shadow(0 0 0px gold);
+  }
+  50% {
+    filter: drop-shadow(0 0 20px gold);
+  }
+}
+
+.elixir-full {
+  animation: elixirFull 0.8s ease-in-out infinite;
+}
+
+/* Elixir Charging Animation */
+@keyframes elixirCharge {
+  0% {
+    background: rgba(100, 150, 255, 0.3);
+    box-shadow: inset 0 0 10px rgba(100, 150, 255, 0.3);
+  }
+  50% {
+    background: rgba(100, 200, 255, 0.5);
+    box-shadow: inset 0 0 20px rgba(100, 200, 255, 0.6);
+  }
+  100% {
+    background: rgba(150, 255, 255, 0.8);
+    box-shadow: inset 0 0 30px rgba(150, 255, 255, 0.9),
+                0 0 20px rgba(100, 200, 255, 0.6);
+  }
+}
+
+.elixir-charging {
+  animation: elixirCharge 0.5s ease-out forwards;
+}
+
+/* Elixir Bar Fill */
+@keyframes barFill {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.elixir-bar-fill {
+  animation: barFill 1s linear;
+}
+
+/* ============================================================================
+   6. TENSION & TIME PRESSURE
+   ============================================================================ */
+
+/* Arena Shake - Final minute tension */
+@keyframes arenaShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+.arena-tension {
+  animation: arenaShake 0.2s ease-in-out infinite;
+}
+
+/* Time Pulse - Bar pulses in final 30 seconds */
+@keyframes timePulse {
+  0%, 100% {
+    background: linear-gradient(90deg, #FF6B6B, #FF8E53);
+  }
+  50% {
+    background: linear-gradient(90deg, #FF3333, #FF5733);
+  }
+}
+
+.time-critical {
+  animation: timePulse 0.5s ease-in-out infinite;
+}
+
+/* Sound Alert Bell */
+@keyframes soundBell {
+  0% {
+    transform: rotateZ(-15deg) scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateZ(15deg) scale(1.2);
+    opacity: 0;
+  }
+}
+
+.sound-alert::after {
+  content: '🔔';
+  animation: soundBell 0.3s ease-out;
+  display: inline-block;
+  margin-left: 5px;
+}
+
+/* ============================================================================
+   7. ENGAGEMENT & MOMENTUM
+   ============================================================================ */
+
+/* Quick Play Button - Urgency pulse */
+@keyframes quickPlayPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0);
+  }
+}
+
+.quick-play {
+  animation: quickPlayPulse 1.5s ease-in-out infinite;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Countdown Auto-Play */
+@keyframes countdownPulse {
+  0% {
+    background: rgba(100, 200, 255, 0.3);
+  }
+  100% {
+    background: rgba(255, 100, 100, 0.3);
+  }
+}
+
+.countdown-auto-play {
+  animation: countdownPulse 1s ease-in-out infinite;
+}
+
+/* Progress Celebration */
+@keyframes celebrate {
+  0% {
+    transform: translateX(-50%) translateY(0) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(-50%) translateY(-20px) scale(1.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-30px) scale(1);
+    opacity: 0;
+  }
+}
+
+.progress-celebration::after {
+  content: '🎉';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  animation: celebrate 1s ease-in-out;
+  font-size: 24px;
+}
+
+/* ============================================================================
+   8. STAT ANIMATIONS
+   ============================================================================ */
+
+/* Count Up Animation */
+@keyframes countUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stat-count-up {
+  animation: countUp 1s ease-out forwards;
+}
+
+.stat-count-up {
+  animation-delay: calc(var(--index, 0) * 0.1s);
+}
+
+/* ============================================================================
+   9. EASTER EGGS & SPECIAL EFFECTS
+   ============================================================================ */
+
+/* Rainbow Mode - Easter egg */
+@keyframes rainbowGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.rainbow-mode {
+  background: linear-gradient(45deg, #ff9a9e, #fecfef, #fecfef, #a1c4fd, #c2e59c, #ffb347) !important;
+  background-size: 400% 400% !important;
+  animation: rainbowGradient 3s ease infinite !important;
+}
+
+/* Floating Emoji - Easter egg particles */
+@keyframes floatingEmoji {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.floating-emoji {
+  position: fixed;
+  animation: floatingEmoji 4s ease-in forwards;
+  font-size: 2rem;
+  z-index: 9999;
+}
+
+/* ============================================================================
+   10. ACCESSIBILITY - Reduced Motion Support
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Keep essential animations but simplify */
+  .victory-flash,
+  .card-play-feedback,
+  .unit-spawn {
+    animation-duration: 0.2s !important;
+  }
+}
+
+/* ============================================================================
+   11. PERFORMANCE OPTIMIZATION
+   ============================================================================ */
+
+/* Use GPU acceleration for smooth animations */
+.card-play-feedback,
+.unit-spawn,
+.unit-hit,
+.unit-death,
+.card-sparkle,
+.confetti {
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Reduce motion on lower-end devices */
+@media (max-width: 768px) {
+  @keyframes cardReady {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(100, 255, 100, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 15px rgba(100, 255, 100, 0.5);
+    }
+  }
+
+  .quick-play {
+    animation-duration: 2s;
+  }
+}
+
+/* ============================================================================
+   12. RESPONSIVE ADJUSTMENTS
+   ============================================================================ */
+
+@media (max-height: 600px) {
+  /* Smaller animations on smaller screens */
+  .confetti {
+    animation-duration: 2s;
+  }
+
+  .score-celebration {
+    font-size: 1.5rem;
+  }
+}
+
+/* ============================================================================
+   13. UTILITY CLASSES
+   ============================================================================ */
+
+/* Apply glow effect to any element */
+.glow-effect {
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.glow-danger {
+  box-shadow: 0 0 20px rgba(255, 100, 100, 0.5);
+}
+
+.glow-success {
+  box-shadow: 0 0 20px rgba(100, 255, 100, 0.5);
+}
+
+.glow-info {
+  box-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
+}
+
+/* Scale transition */
+.scale-transition {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Fade in */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Slide in */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in-up {
+  animation: slideInUp 0.5s ease-out;
+}
+
+/* ============================================================================
+   End of Whimsy Enhancements CSS
+   ============================================================================ */

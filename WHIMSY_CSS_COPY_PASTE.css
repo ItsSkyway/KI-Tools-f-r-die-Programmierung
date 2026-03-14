@@ -1,0 +1,499 @@
+/* ============================================================================
+   ⚔️ CLASH ROYALE - MOST IMPACTFUL ANIMATIONS (Copy These First!)
+   ============================================================================
+   
+   These 5 animations have the HIGHEST impact with minimal code.
+   Copy-paste these into your <style> tag for immediate results.
+   
+   ============================================================================ */
+
+/* ============================================================================
+   1. VICTORY CELEBRATION (MUST HAVE)
+   ============================================================================ */
+
+/* Victory Flash - Gold screen flash */
+@keyframes victoryFlash {
+  0% {
+    opacity: 0;
+    transform: scaleY(0);
+    background: rgba(255, 215, 0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.2);
+    background: rgba(255, 215, 0, 0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(1);
+    background: rgba(255, 215, 0, 0);
+  }
+}
+
+.victory-flash {
+  animation: victoryFlash 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Confetti falling */
+@keyframes confettiFall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotateZ(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100vh) rotateZ(360deg);
+  }
+}
+
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  z-index: 1000;
+  animation: confettiFall 3s ease-in forwards;
+}
+
+/* ============================================================================
+   2. DEFEAT EFFECT (MUST HAVE)
+   ============================================================================ */
+
+@keyframes defeatWobble {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-2deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+}
+
+.defeat-wobble {
+  animation: defeatWobble 0.5s ease-in-out;
+}
+
+/* ============================================================================
+   3. QUICK PLAY BUTTON (MUST HAVE)
+   ============================================================================ */
+
+@keyframes quickPlayPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0);
+  }
+}
+
+.quick-play {
+  animation: quickPlayPulse 1.5s ease-in-out infinite;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.quick-play:hover {
+  transform: scale(1.1);
+  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.4);
+}
+
+/* ============================================================================
+   4. UNIT SPAWN (SHOULD HAVE)
+   ============================================================================ */
+
+@keyframes unitSpawn {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotateZ(-180deg);
+    filter: blur(10px);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.2) rotateZ(10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotateZ(0deg);
+    filter: blur(0);
+  }
+}
+
+.unit-spawn {
+  animation: unitSpawn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Stagger multiple units */
+.unit-spawn-stagger {
+  animation-delay: calc(var(--index, 0) * 0.1s);
+}
+
+/* ============================================================================
+   5. CROWN DESTRUCTION (SHOULD HAVE)
+   ============================================================================ */
+
+@keyframes crownDestruction {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0) rotateZ(0deg);
+    filter: drop-shadow(0 0 20px #FFD700);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3) translateY(-30px) rotateZ(10deg);
+    filter: drop-shadow(0 0 40px #FF6B00);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3) translateY(60px) rotateZ(180deg);
+    filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
+  }
+}
+
+.crown-destruction {
+  animation: crownDestruction 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  display: inline-block;
+  font-size: 3rem;
+  position: absolute;
+}
+
+/* ============================================================================
+   6. DAMAGE NUMBER (NICE TO HAVE)
+   ============================================================================ */
+
+@keyframes damagePopup {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    color: #FF6B6B;
+    text-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.5);
+    text-shadow: 0 0 0 rgba(255, 107, 107, 0);
+  }
+}
+
+.damage-number {
+  position: absolute;
+  font-weight: bold;
+  font-size: 1.5rem;
+  animation: damagePopup 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ============================================================================
+   7. HIT REACTION (NICE TO HAVE)
+   ============================================================================ */
+
+@keyframes hitReaction {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(0.95) translateX(-5px);
+  }
+  75% {
+    transform: scale(1.05) translateX(5px);
+  }
+}
+
+.unit-hit {
+  animation: hitReaction 0.3s ease-in-out;
+}
+
+/* ============================================================================
+   8. UNIT DEATH (NICE TO HAVE)
+   ============================================================================ */
+
+@keyframes unitDeath {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotateZ(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0) rotateZ(180deg) translateY(20px);
+  }
+}
+
+.unit-death {
+  animation: unitDeath 0.5s ease-in;
+}
+
+/* ============================================================================
+   9. CARD PLAY FEEDBACK (NICE TO HAVE)
+   ============================================================================ */
+
+@keyframes cardPlay {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(40px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.card-play-feedback {
+  animation: cardPlay 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Sparkles */
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.card-sparkle::before,
+.card-sparkle::after {
+  content: '✨';
+  position: absolute;
+  animation: sparkle 0.6s ease-out;
+  pointer-events: none;
+}
+
+.card-sparkle::before {
+  animation-delay: 0s;
+  top: -20px;
+  left: -20px;
+}
+
+.card-sparkle::after {
+  animation-delay: 0.1s;
+  top: -20px;
+  right: -20px;
+}
+
+/* ============================================================================
+   10. ARENA TENSION (TIME PRESSURE)
+   ============================================================================ */
+
+@keyframes arenaShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+.arena-tension {
+  animation: arenaShake 0.2s ease-in-out infinite;
+}
+
+/* Time critical pulse */
+@keyframes timePulse {
+  0%, 100% {
+    background: linear-gradient(90deg, #FF6B6B, #FF8E53);
+  }
+  50% {
+    background: linear-gradient(90deg, #FF3333, #FF5733);
+  }
+}
+
+.time-critical {
+  animation: timePulse 0.5s ease-in-out infinite;
+}
+
+/* ============================================================================
+   11. ELIXIR INDICATORS
+   ============================================================================ */
+
+/* Card ready to play */
+@keyframes cardReady {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(100, 255, 100, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(100, 255, 100, 0.9);
+    transform: scale(1.05);
+  }
+}
+
+.card-ready {
+  animation: cardReady 0.6s ease-in-out infinite;
+}
+
+/* Elixir low warning */
+@keyframes elixirWarning {
+  0%, 100% {
+    background: rgba(100, 100, 255, 0.3);
+  }
+  50% {
+    background: rgba(255, 50, 50, 0.3);
+  }
+}
+
+.elixir-low {
+  animation: elixirWarning 0.5s ease-in-out infinite;
+}
+
+/* Elixir fully charged */
+@keyframes elixirFull {
+  0%, 100% {
+    filter: drop-shadow(0 0 0px gold);
+  }
+  50% {
+    filter: drop-shadow(0 0 20px gold);
+  }
+}
+
+.elixir-full {
+  animation: elixirFull 0.8s ease-in-out infinite;
+}
+
+/* ============================================================================
+   12. EASTER EGGS
+   ============================================================================ */
+
+/* Rainbow mode (Konami code) */
+@keyframes rainbowGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.rainbow-mode {
+  background: linear-gradient(45deg, #ff9a9e, #fecfef, #fecfef, #a1c4fd, #c2e59c, #ffb347) !important;
+  background-size: 400% 400% !important;
+  animation: rainbowGradient 3s ease infinite !important;
+}
+
+/* Floating emoji */
+@keyframes floatingEmoji {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.floating-emoji {
+  position: fixed;
+  animation: floatingEmoji 4s ease-in forwards;
+  font-size: 2rem;
+  z-index: 9999;
+}
+
+/* ============================================================================
+   13. HOVER EFFECTS
+   ============================================================================ */
+
+/* Card hover - lift up */
+.card-hand:hover {
+  transform: translateY(-15px) scale(1.1);
+  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.4),
+              0 0 30px rgba(100, 200, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Button shimmer */
+.button-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.button-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent);
+  transition: left 0.5s;
+}
+
+.button-shimmer:hover::before {
+  left: 100%;
+}
+
+/* ============================================================================
+   14. ACCESSIBILITY
+   ============================================================================ */
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   15. PERFORMANCE OPTIMIZATION
+   ============================================================================ */
+
+/* Use GPU acceleration */
+.card-play-feedback,
+.unit-spawn,
+.unit-hit,
+.unit-death,
+.card-sparkle,
+.confetti {
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+}
+
+/* ============================================================================
+   IMPLEMENTATION QUICK COPY
+   ============================================================================
+   
+   1. Copy ALL of this file
+   2. Open index.html
+   3. Find the </style> tag near the top
+   4. Paste ALL of this before </style>
+   5. Save the file
+   6. Refresh your browser
+   7. All animations are now ready to use!
+   
+   ============================================================================ */

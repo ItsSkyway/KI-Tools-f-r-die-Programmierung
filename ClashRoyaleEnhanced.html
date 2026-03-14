@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>⚔️ Clash Royale Enhanced</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+          'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow: hidden;
+      }
+      #root { width: 100%; height: 100vh; }
+      
+      /* Performance: GPU acceleration */
+      .unit { will-change: transform; }
+      .card-btn { transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1); }
+      .card-btn:active { transform: scale(0.95); }
+      
+      /* Spell targeting zone */
+      .spell-zone {
+        animation: pulse-zone 0.6s ease-out;
+      }
+      @keyframes pulse-zone {
+        0% { opacity: 0.8; transform: scale(0.8); }
+        100% { opacity: 0; transform: scale(1.3); }
+      }
+      
+      /* Card preview tooltip */
+      .tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.95);
+        border: 2px solid #fbbf24;
+        border-radius: 8px;
+        padding: 12px;
+        color: white;
+        font-size: 12px;
+        z-index: 1000;
+        pointer-events: none;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+        max-width: 200px;
+      }
+      
+      /* Hand rotation animation */
+      @keyframes hand-cycle {
+        0% { opacity: 0; transform: translateX(-30px); }
+        100% { opacity: 1; transform: translateX(0); }
+      }
+      .new-card { animation: hand-cycle 0.3s ease-out; }
+      
+      /* Mobile optimization */
+      @media (max-width: 768px) {
+        .arena { transform: scale(0.9); transform-origin: top center; }
+      }
+      
+      /* Deployment zone */
+      .deployment-zone {
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        background: rgba(100, 200, 255, 0.1);
+      }
+      
+      /* Performance: reduce repaints */
+      .hp-bar { contain: layout style paint; }
+      
+      /* Smooth card transitions */
+      .hand-card {
+        position: relative;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .hand-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+      }
+      
+      /* Learning indicator */
+      .ai-learning {
+        animation: pulse-glow 1s ease-in-out infinite;
+      }
+      @keyframes pulse-glow {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React
+
+// ============================================================================
+// ENHANCED CARD DATABASE - 16 UNIQUE CARDS WITH EXTENDED STATS
+// ============================================================================
+
+const CARDS = {
+  knight: {
+    id: 'knight',
+    name: 'Knight',
+    emoji: '🛡️',
+    elixirCost: 3,
+    type: 'troop',
+    stats: { hp: 600, damage: 100, speed: 1, range: 50, attackSpeed: 1 },
+    description: 'Melee tank with solid HP',
+    rarity: 'common',
+    deployZone: 'anywhere',
+  },
+  archer: {
+    id: 'archer',
+    name: 'Archer',
+    emoji: '🏹',
+    elixirCost: 3,
+    type: 'troop',
+    stats: { hp: 200, damage: 120, speed: 1.2, range: 120, attackSpeed: 1.2 },
+    description: 'Ranged attacker, low HP',
+    rarity: 'common',
+    deployZone: 'anywhere',
+  },
+  giant: {
+    id: 'giant',
+    name: 'Giant',
+    emoji: '👹',
+    elixirCost: 5,
+    type: 'troop',
+    stats: { hp: 1800, damage: 60, speed: 0.7, range: 50, attackSpeed: 1.5, targetBuildings: true },
+    description: 'Slow, tanky, targets buildings',
+    rarity: 'rare',
+    deployZone: 'back',
+  },
+  fireball: {
+    id: 'fireball',
+    name: 'Fireball',
+    emoji: '🔥',
+    elixirCost: 4,
+    type: 'spell',
+    stats: { damage: 400, splashRadius: 120 },
+    description: 'AOE spell, damages area',
+    rarity: 'common',
+    deployZone: 'targeted',
+  },
+  arrows: {
+    id: 'arrows',
+    name: 'Arrows',
+    emoji: '⬆️',
+    elixirCost: 3,
+    type: 'spell',
+    stats: { damage: 200, splashRadius: 150 },
+    description: 'Cheap AOE spell',
+    rarity: 'common',
+    deployZone: 'targeted',
+  },
+  minions: {
+    id: 'minions',
+    name: 'Minions',
+    emoji: '👿',
+    elixirCost: 3,
+    type: 'troop',
+    stats: { hp: 100, damage: 80, speed: 1.4, range: 100, attackSpeed: 1, flying: true, count: 3 },
+    description: 'Flying units, fast',
+    rarity: 'common',
+    deployZone: 'anywhere',
+  },
+  skeletonArmy: {
+    id: 'skeletonArmy',
+    name: 'Skeleton Army',
+    emoji: '💀',
+    elixirCost: 3,
+    type: 'troop',
+    stats: { hp: 60, damage: 40, speed: 1.3, range: 40, attackSpeed: 0.8, count: 10 },
+    description: 'Spawns 10 weak skeletons',
+    rarity: 'rare',
+    deployZone: 'anywhere',
+  },
+  babyDragon: {
+    id: 'babyDragon',
+    name: 'Baby Dragon',
+    emoji: '🐉',
+    elixirCost: 4,
+    type: 'troop',
+    stats: { hp: 800, damage: 120, speed: 0.9, range: 100, attackSpeed: 1.2, flying: true, splashRadius: 80 },
+    description: 'Flying, splash damage',
+    rarity: 'rare',
+    deployZone: 'back',
+  },
+  valkyrie: {
+    id: 'valkyrie',
+    name: 'Valkyrie',
+    emoji: '⚔️',
+    elixirCost: 4,
+    type: 'troop',
+    stats: { hp: 900, damage: 130, speed: 0.9, range: 50, attackSpeed: 1.3, splashRadius: 100 },
+    description: 'Melee, circular splash',
+    rarity: 'rare',
+    deployZone: 'anywhere',
+  },
+  musketeer: {
+    id: 'musketeer',
+    name: 'Musketeer',
+    emoji: '🤠',
+    elixirCost: 4,
+    type: 'troop',
+    stats: { hp: 400, damage: 160, speed: 0.95, range: 140, attackSpeed: 1 },
+    description: 'Long-range single target',
+    rarity: 'rare',
+    deployZone: 'back',
+  },
+  hogRider: {
+    id: 'hogRider',
+    name: 'Hog Rider',
+    emoji: '🐗',
+    elixirCost: 4,
+    type: 'troop',
+    stats: { hp: 500, damage: 150, speed: 1.5, range: 50, attackSpeed: 1.2, targetBuildings: true },
+    description: 'Fast, targets buildings',
+    rarity: 'rare',
+    deployZone: 'anywhere',
+  },
+  witch: {
+    id: 'witch',
+    name: 'Witch',
+    emoji: '🧙‍♀️',
+    elixirCost: 5,
+    type: 'troop',
+    stats: { hp: 500, damage: 100, speed: 0.85, range: 100, attackSpeed: 1.2, spawnSkeleton: true },
+    description: 'Spawns skeletons, ranged',
+    rarity: 'epic',
+    deployZone: 'back',
+  },
+  pekka: {
+    id: 'pekka',
+    name: 'P.E.K.K.A',
+    emoji: '🤖',
+    elixirCost: 7,
+    type: 'troop',
+    stats: { hp: 2000, damage: 300, speed: 0.6, range: 60, attackSpeed: 1.8 },
+    description: 'Extreme damage & HP',
+    rarity: 'epic',
+    deployZone: 'back',
+  },
+  bombTower: {
+    id: 'bombTower',
+    name: 'Bomb Tower',
+    emoji: '💣',
+    elixirCost: 5,
+    type: 'building',
+    stats: { hp: 700, damage: 200, range: 130, attackSpeed: 1.2, splashRadius: 100 },
+    description: 'Defensive building, splash',
+    rarity: 'rare',
+    deployZone: 'defense',
+  },
+  cannon: {
+    id: 'cannon',
+    name: 'Cannon',
+    emoji: '🔫',
+    elixirCost: 3,
+    type: 'building',
+    stats: { hp: 400, damage: 150, range: 100, attackSpeed: 1 },
+    description: 'Defensive building',
+    rarity: 'common',
+    deployZone: 'defense',
+  },
+  freeze: {
+    id: 'freeze',
+    name: 'Freeze Spell',
+    emoji: '❄️',
+    elixirCost: 4,
+    type: 'spell',
+    stats: { splashRadius: 120, freezeDuration: 2000 },
+    description: 'Freezes enemies for 2s',
+    rarity: 'epic',
+    deployZone: 'targeted',
+  },
+}
+
+const CARD_ARRAY = Object.values(CARDS)
+
+// ============================================================================
+// ENHANCED GAME CONSTANTS & UTILITIES
+// ============================================================================
+
+const ARENA_WIDTH = 600
+const ARENA_HEIGHT = 800
+const LANE_WIDTH = ARENA_WIDTH / 2
+
+// Deployment zones for buildings
+const DEPLOYMENT_ZONES = {
+  player: {
+    defense: { x: LANE_WIDTH / 2, y: ARENA_HEIGHT - 150, width: 150, height: 100 },
+    back: { x: LANE_WIDTH / 2, y: ARENA_HEIGHT - 250, width: 200, height: 100 },
+  },
+  enemy: {
+    defense: { x: LANE_WIDTH / 2, y: 150, width: 150, height: 100 },
+    back: { x: LANE_WIDTH / 2, y: 250, width: 200, height: 100 },
+  },
+}
+
+// ============================================================================
+// MATCH HISTORY & STATS TRACKING
+// ============================================================================
+
+const MatchHistoryManager = {
+  save: (matchData) => {
+    try {
+      let history = JSON.parse(localStorage.getItem('clashRoyaleHistory') || '[]')
+      history.unshift({
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        ...matchData,
+      })
+      history = history.slice(0, 50) // Keep last 50 matches
+      localStorage.setItem('clashRoyaleHistory', JSON.stringify(history))
+    } catch (e) {
+      console.error('Failed to save match history:', e)
+    }
+  },
+  
+  load: () => {
+    try {
+      return JSON.parse(localStorage.getItem('clashRoyaleHistory') || '[]')
+    } catch {
+      return []
+    }
+  },
+  
+  getStats: () => {
+    const history = MatchHistoryManager.load()
+    const stats = {
+      totalMatches: history.length,
+      wins: history.filter(m => m.result === 'win').length,
+      losses: history.filter(m => m.result === 'loss').length,
+      ties: history.filter(m => m.result === 'tie').length,
+      avgDuration: history.length > 0
+        ? (history.reduce((sum, m) => sum + m.duration, 0) / history.length).toFixed(1)
+        : 0,
+      winRate: history.length > 0
+        ? ((history.filter(m => m.result === 'win').length / history.length) * 100).toFixed(1)
+        : 0,
+    }
+    return stats
+  },
+}
+
+// ============================================================================
+// ENHANCED AI SYSTEM WITH DECISION TREE & LEARNING
+// ============================================================================
+
+const AIEngine = {
+  // Decision tree for card selection
+  selectCard: (hand, elixir, gameState, difficulty, memory) => {
+    const playableCards = hand.filter(h => CARDS[h.cardId].elixirCost <= elixir)
+    if (playableCards.length === 0) return null
+
+    let selectedCard = playableCards[0]
+
+    if (difficulty === 'hard') {
+      // Position-aware deployment
+      const defendingCards = playableCards.filter(c => CARDS[c.cardId].type === 'building')
+      const offensiveCards = playableCards.filter(c => CARDS[c.cardId].stats.speed >= 1)
+
+      // Elixir banking strategy
+      if (elixir >= 8 && offensiveCards.length > 0) {
+        // Go aggressive when high elixir
+        const highDamage = offensiveCards.filter(c => CARDS[c.cardId].stats.damage >= 100)
+        selectedCard = highDamage.length > 0 ? highDamage[0] : offensiveCards[0]
+      } else if (gameState.incomingThreat && defendingCards.length > 0) {
+        // Defend if threat detected
+        selectedCard = defendingCards[0]
+      } else {
+        // Rotation patterns - cycle through deck
+        selectedCard = memory.lastPlayedIndex !== undefined
+          ? playableCards[(memory.lastPlayedIndex + 1) % playableCards.length]
+          : playableCards[Math.floor(Math.random() * playableCards.length)]
+      }
+    }
+
+    return selectedCard
+  },
+
+  // Learn from player behavior
+  analyzePlayerPattern: (playerHistory, currentMatch) => {
+    if (playerHistory.length < 3) return null
+
+    const avgCardCost = playerHistory.reduce((sum, m) => sum + m.deckAvgCost, 0) / playerHistory.length
+    const preferredCardTypes = {}
+    
+    playerHistory.forEach(match => {
+      if (match.usedCards) {
+        match.usedCards.forEach(cardId => {
+          const type = CARDS[cardId]?.type
+          preferredCardTypes[type] = (preferredCardTypes[type] || 0) + 1
+        })
+      }
+    })
+
+    return { avgCardCost, preferredCardTypes }
+  },
+}
+
+// ============================================================================
+// PERFORMANCE OPTIMIZATION UTILS
+// ============================================================================
+
+const RenderOptimizer = {
+  // Batch DOM updates
+  scheduleUpdate: (() => {
+    let scheduled = false
+    let updateFn = null
+    
+    return (fn) => {
+      updateFn = fn
+      if (!scheduled) {
+        scheduled = true
+        requestAnimationFrame(() => {
+          updateFn && updateFn()
+          scheduled = false
+        })
+      }
+    }
+  })(),
+
+  // Memoize expensive computations
+  memoize: (fn) => {
+    const cache = new Map()
+    return (...args) => {
+      const key = JSON.stringify(args)
+      if (cache.has(key)) return cache.get(key)
+      const result = fn(...args)
+      cache.set(key)
+      return result
+    }
+  },
+}
+
+// ============================================================================
+// CARD CYCLING SYSTEM
+// ============================================================================
+
+const CardCycleManager = {
+  getCurrentHandState: (hand) => {
+    return {
+      cardsInHand: hand.length,
+      nextCard: hand[0]?.cardId,
+      cyclePosition: 0,
+    }
+  },
+
+  rotateHand: (hand) => {
+    if (hand.length <= 1) return hand
+    return [...hand.slice(1), hand[0]]
+  },
+}
+
+// ============================================================================
+// UNIT TARGETING & PATHING
+// ============================================================================
+
+const findNearestEnemy = (unit, enemies, towers) => {
+  let nearest = null
+  let minDist = Infinity
+  const range = unit.stats.range || 100
+
+  if (unit.stats.targetBuildings && enemies.buildings) {
+    enemies.buildings.forEach(building => {
+      const dist = Math.hypot(building.x - unit.x, building.y - unit.y)
+      if (dist < range && dist < minDist) {
+        nearest = building
+        minDist = dist
+      }
+    })
+  }
+
+  if (unit.stats.targetBuildings && towers) {
+    towers.forEach(tower => {
+      if (tower.hp > 0) {
+        const dist = Math.hypot(tower.x - unit.x, tower.y - unit.y)
+        if (dist < range && dist < minDist) {
+          nearest = tower
+          minDist = dist
+        }
+      }
+    })
+  }
+
+  if (enemies.troops) {
+    enemies.troops.forEach(troop => {
+      if (troop.hp > 0) {
+        const dist = Math.hypot(troop.x - unit.x, troop.y - unit.y)
+        if (dist < range && dist < minDist) {
+          nearest = troop
+          minDist = dist
+        }
+      }
+    })
+  }
+
+  return nearest
+}
+
+// Improved pathfinding - avoid crowded areas
+const moveUnitOptimized = (unit, targetX, targetY, speed = 1, otherUnits = []) => {
+  const dist = Math.hypot(targetX - unit.x, targetY - unit.y)
+  if (dist < speed) {
+    unit.x = targetX
+    unit.y = targetY
+    return true
+  }
+
+  // Avoid crowded areas
+  const crowdRepulsion = otherUnits
+    .filter(u => u.id !== unit.id)
+    .filter(u => Math.hypot(u.x - unit.x, u.y - unit.y) < 50)
+    .reduce((acc, u) => {
+      const angle = Math.atan2(unit.y - u.y, unit.x - u.x)
+      return { 
+        x: acc.x + Math.cos(angle) * 2, 
+        y: acc.y + Math.sin(angle) * 2 
+      }
+    }, { x: 0, y: 0 })
+
+  let finalX = targetX + crowdRepulsion.x
+  let finalY = targetY + crowdRepulsion.y
+  
+  const finalDist = Math.hypot(finalX - unit.x, finalY - unit.y)
+  const ratio = Math.min(speed / finalDist, 1)
+  
+  unit.x += (finalX - unit.x) * ratio
+  unit.y += (finalY - unit.y) * ratio
+  return false
+}
+
+// ============================================================================
+// MAIN ENHANCED GAME COMPONENT
+// ============================================================================
+
+function ClashRoyaleGameEnhanced() {
+  const [screen, setScreen] = useState('menu')
+  const [difficulty, setDifficulty] = useState('medium')
+  const [selectedDeck, setSelectedDeck] = useState([])
+  const [showCardPreview, setShowCardPreview] = useState(null)
+  const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 })
+  const [showStats, setShowStats] = useState(false)
+  const [matchStats, setMatchStats] = useState(MatchHistoryManager.getStats())
+  const [gameSettings, setGameSettings] = useState({
+    soundEnabled: true,
+    animations: true,
+    tutorialShown: localStorage.getItem('clashRoyaleTutorial') === 'true',
+  })
+
+  const gameStateRef = useRef({
+    playerElixir: 10,
+    enemyElixir: 10,
+    gameTime: 180000,
+    gameOver: false,
+    winner: null,
+    playerTroops: [],
+    playerBuildings: [],
+    enemyTroops: [],
+    enemyBuildings: [],
+    playerHand: [],
+    enemyHand: [],
+    lastCardPlayTime: { player: 0, enemy: 0 },
+    freezeZones: [],
+    usedCards: [],
+    startTime: 0,
+  })
+
+  const towerStateRef = useRef({
+    player: {
+      kingTower: { x: ARENA_WIDTH / 2, y: ARENA_HEIGHT - 60, hp: 3500, isKing: true },
+      princessLeft: { x: LANE_WIDTH / 2 - 80, y: ARENA_HEIGHT - 120, hp: 1800 },
+      princessRight: { x: LANE_WIDTH / 2 + 80, y: ARENA_HEIGHT - 120, hp: 1800 },
+    },
+    enemy: {
+      kingTower: { x: ARENA_WIDTH / 2, y: 60, hp: 3500, isKing: true },
+      princessLeft: { x: LANE_WIDTH / 2 - 80, y: 120, hp: 1800 },
+      princessRight: { x: LANE_WIDTH / 2 + 80, y: 120, hp: 1800 },
+    },
+  })
+
+  const aiMemoryRef = useRef({
+    lastPlayedIndex: 0,
+    playerBehavior: [],
+    defensesBuilt: [],
+  })
+
+  const [uiState, setUiState] = useState(0)
+  const [gameStats, setGameStats] = useState({
+    playerHPBars: [],
+    playerBuildingBars: [],
+    enemyHPBars: [],
+    enemyBuildingBars: [],
+    playerElixir: 10,
+    enemyElixir: 10,
+    gameTime: 180,
+    towers: {},
+    handState: {},
+  })
+  const [spellZonePreview, setSpellZonePreview] = useState(null)
+
+  // Play sound effect
+  const playSound = useCallback((type) => {
+    if (!gameSettings.soundEnabled) return
+    
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    const oscillator = audioContext.createOscillator()
+    const gainNode = audioContext.createGain()
+    
+    oscillator.connect(gainNode)
+    gainNode.connect(audioContext.destination)
+    
+    switch (type) {
+      case 'card-play':
+        oscillator.frequency.value = 800
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
+        break
+      case 'spell':
+        oscillator.frequency.value = 1200
+        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
+        break
+      case 'damage':
+        oscillator.frequency.value = 400
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15)
+        break
+    }
+    
+    oscillator.start(audioContext.currentTime)
+    oscillator.stop(audioContext.currentTime + 0.3)
+  }, [gameSettings.soundEnabled])
+
+  // Handle spell targeting
+  const handleSpellCast = useCallback((cardId, x, y) => {
+    const gs = gameStateRef.current
+    const card = CARDS[cardId]
+    if (card.type !== 'spell') return
+
+    // Show spell zone
+    setSpellZonePreview({ x, y, radius: card.stats.splashRadius })
+    setTimeout(() => setSpellZonePreview(null), 600)
+
+    playSound('spell')
+  }, [playSound])
+
+  // Card preview on hover
+  const handleCardHover = useCallback((cardId, e) => {
+    const card = CARDS[cardId]
+    if (!card) return
+
+    setShowCardPreview(cardId)
+    const rect = e.currentTarget.getBoundingClientRect()
+    setPreviewPos({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10,
+    })
+  }, [])
+
+  const playCard = useCallback((cardId, isPlayer = true) => {
+    const gs = gameStateRef.current
+    const card = CARDS[cardId]
+    if (!card) return
+
+    const elixir = isPlayer ? gs.playerElixir : gs.enemyElixir
+    if (elixir < card.elixirCost) return
+
+    if (isPlayer) {
+      gs.playerElixir -= card.elixirCost
+      gs.usedCards.push(cardId)
+      playSound('card-play')
+    } else {
+      gs.enemyElixir -= card.elixirCost
+    }
+
+    const hand = isPlayer ? gs.playerHand : gs.enemyHand
+    const handIdx = hand.findIndex(h => h.cardId === cardId)
+    if (handIdx >= 0) hand.splice(handIdx, 1)
+
+    // Spell handling with improved targeting
+    if (card.type === 'spell') {
+      const side = isPlayer ? 'enemy' : 'player'
+      const targetTroops = side === 'enemy' ? gs.enemyTroops : gs.playerTroops
+      const targetBuildings = side === 'enemy' ? gs.enemyBuildings : gs.playerBuildings
+
+      // Smart spell targeting - target center of mass
+      const allTargets = [...targetTroops, ...targetBuildings]
+      let centerX = isPlayer ? ARENA_WIDTH * 0.75 : ARENA_WIDTH * 0.25
+      let centerY = isPlayer ? ARENA_HEIGHT * 0.3 : ARENA_HEIGHT * 0.7
+
+      if (allTargets.length > 0) {
+        centerX = allTargets.reduce((sum, t) => sum + t.x, 0) / allTargets.length
+        centerY = allTargets.reduce((sum, t) => sum + t.y, 0) / allTargets.length
+      }
+
+      const splashRadius = card.stats.splashRadius || 100
+
+      if (cardId === 'fireball') {
+        targetTroops.forEach(troop => {
+          const dist = Math.hypot(troop.x - centerX, troop.y - centerY)
+          if (dist < splashRadius) {
+            troop.hp -= card.stats.damage
+            playSound('damage')
+          }
+        })
+        targetBuildings.forEach(building => {
+          const dist = Math.hypot(building.x - centerX, building.y - centerY)
+          if (dist < splashRadius) {
+            building.hp -= card.stats.damage
+          }
+        })
+      } else if (cardId === 'arrows') {
+        targetTroops.forEach(troop => {
+          const dist = Math.hypot(troop.x - centerX, troop.y - centerY)
+          if (dist < splashRadius) {
+            troop.hp -= card.stats.damage
+            playSound('damage')
+          }
+        })
+      } else if (cardId === 'freeze') {
+        gs.freezeZones.push({
+          x: centerX,
+          y: centerY,
+          radius: splashRadius,
+          duration: 2000,
+          side: side,
+        })
+        targetTroops.forEach(troop => {
+          const dist = Math.hypot(troop.x - centerX, troop.y - centerY)
+          if (dist < splashRadius) {
+            troop.frozen = 2000
+          }
+        })
+      }
+    } else {
+      // Troop/building deployment with zone awareness
+      const troops = isPlayer ? gs.playerTroops : gs.enemyTroops
+      const buildings = isPlayer ? gs.playerBuildings : gs.enemyBuildings
+
+      let spawnX = isPlayer ? LANE_WIDTH / 2 : LANE_WIDTH + LANE_WIDTH / 2
+      let spawnY = isPlayer ? ARENA_HEIGHT - 200 : 200
+
+      // Use deployment zones for buildings
+      if (card.type === 'building' && card.deployZone === 'defense') {
+        const zone = DEPLOYMENT_ZONES[isPlayer ? 'player' : 'enemy'].defense
+        spawnX = zone.x + (Math.random() - 0.5) * zone.width
+        spawnY = zone.y + (Math.random() - 0.5) * zone.height
+      }
+
+      if (card.type === 'building') {
+        buildings.push({
+          id: Math.random(),
+          cardId: cardId,
+          card: card,
+          x: spawnX,
+          y: spawnY,
+          hp: card.stats.hp || 500,
+          lastAttackTime: 0,
+          isPlayer: isPlayer,
+        })
+      } else {
+        const count = card.stats.count || 1
+        for (let i = 0; i < count; i++) {
+          const offsetX = (Math.random() - 0.5) * 80
+          const offsetY = (Math.random() - 0.5) * 40
+          troops.push({
+            id: Math.random(),
+            cardId: cardId,
+            card: card,
+            x: spawnX + offsetX,
+            y: spawnY + offsetY,
+            hp: card.stats.hp || 100,
+            targetId: null,
+            lastAttackTime: 0,
+            isPlayer: isPlayer,
+          })
+        }
+      }
+    }
+  }, [playSound])
+
+  const botPlayCard = useCallback(() => {
+    const gs = gameStateRef.current
+    if (gs.gameOver) return
+
+    const now = Date.now()
+    const hand = gs.enemyHand
+    if (hand.length === 0) return
+
+    let playInterval = 5000
+    if (difficulty === 'medium') playInterval = 4000
+    if (difficulty === 'hard') playInterval = 2500
+
+    if (now - gs.lastCardPlayTime.enemy < playInterval) return
+
+    const gameState = {
+      incomingThreat: gs.playerTroops.length > 0,
+    }
+
+    const selectedCard = AIEngine.selectCard(
+      hand,
+      gs.enemyElixir,
+      gameState,
+      difficulty,
+      aiMemoryRef.current
+    )
+
+    if (selectedCard && CARDS[selectedCard.cardId].elixirCost <= gs.enemyElixir) {
+      playCard(selectedCard.cardId, false)
+      gs.lastCardPlayTime.enemy = now
+      aiMemoryRef.current.lastPlayedIndex = hand.indexOf(selectedCard)
+    }
+  }, [difficulty, playCard])
+
+  const initializeGame = useCallback(() => {
+    const gs = gameStateRef.current
+    gs.playerElixir = 10
+    gs.enemyElixir = 10
+    gs.gameTime = 180000
+    gs.gameOver = false
+    gs.winner = null
+    gs.playerTroops = []
+    gs.playerBuildings = []
+    gs.enemyTroops = []
+    gs.enemyBuildings = []
+    gs.playerHand = selectedDeck.map(cardId => ({ cardId, id: Math.random() }))
+    gs.enemyHand = CARD_ARRAY.slice(0, 8).map(card => ({ cardId: card.id, id: Math.random() }))
+    gs.lastCardPlayTime = { player: 0, enemy: 0 }
+    gs.freezeZones = []
+    gs.usedCards = []
+    gs.startTime = Date.now()
+
+    // Reset towers
+    Object.entries(towerStateRef.current).forEach(([side, towers]) => {
+      Object.entries(towers).forEach(([key, tower]) => {
+        tower.hp = tower.isKing ? 3500 : 1800
+        tower.destroyed = false
+      })
+    })
+  }, [selectedDeck])
+
+  // Main game loop with performance optimizations
+  useEffect(() => {
+    if (screen !== 'battle') return
+
+    const gameLoopInterval = setInterval(() => {
+      const gs = gameStateRef.current
+      const towers = towerStateRef.current
+
+      if (gs.gameOver) return
+
+      gs.gameTime -= 33
+      if (gs.gameTime <= 0) {
+        gs.gameTime = 0
+        gs.gameOver = true
+        const playerTowerHp = Object.values(towers.player).reduce((sum, t) => sum + t.hp, 0)
+        const enemyTowerHp = Object.values(towers.enemy).reduce((sum, t) => sum + t.hp, 0)
+        gs.winner = enemyTowerHp < playerTowerHp ? 'player' : enemyTowerHp > playerTowerHp ? 'enemy' : 'tie'
+      }
+
+      const doubleElixir = gs.gameTime < 60000
+      const elixirRegen = doubleElixir ? 0.03 : 0.015
+
+      gs.playerElixir = Math.min(10, gs.playerElixir + elixirRegen)
+      gs.enemyElixir = Math.min(10, gs.enemyElixir + elixirRegen)
+
+      // Dead unit filtering - optimized
+      gs.playerTroops = gs.playerTroops.filter(u => u.hp > 0)
+      gs.enemyTroops = gs.enemyTroops.filter(u => u.hp > 0)
+      gs.playerBuildings = gs.playerBuildings.filter(u => u.hp > 0)
+      gs.enemyBuildings = gs.enemyBuildings.filter(u => u.hp > 0)
+
+      gs.playerTroops.forEach(u => { if (u.frozen) u.frozen -= 33 })
+      gs.enemyTroops.forEach(u => { if (u.frozen) u.frozen -= 33 })
+
+      // Unit movement & combat with optimized pathfinding
+      ;[
+        { units: gs.playerTroops, enemies: { troops: gs.enemyTroops, buildings: gs.enemyBuildings }, enemyTowers: towers.enemy, allUnits: gs.playerTroops },
+        { units: gs.enemyTroops, enemies: { troops: gs.playerTroops, buildings: gs.playerBuildings }, enemyTowers: towers.player, allUnits: gs.enemyTroops },
+      ].forEach(({ units, enemies, enemyTowers, allUnits }) => {
+        units.forEach(unit => {
+          if (unit.frozen && unit.frozen > 0) return
+
+          const target = findNearestEnemy(unit, enemies, Object.values(enemyTowers))
+          if (target) {
+            const dist = Math.hypot(target.x - unit.x, target.y - unit.y)
+            const range = unit.card.stats.range || 100
+
+            if (dist < range) {
+              const now = Date.now()
+              const attackSpeed = unit.card.stats.attackSpeed || 1
+              if (now - unit.lastAttackTime > 1000 / attackSpeed) {
+                const damage = unit.card.stats.damage || 50
+                target.hp -= damage
+                unit.lastAttackTime = now
+              }
+            } else {
+              const speed = unit.card.stats.speed || 1
+              moveUnitOptimized(unit, target.x, target.y, speed, allUnits)
+            }
+          } else {
+            const targetY = unit.isPlayer ? 0 : ARENA_HEIGHT
+            const speed = unit.card.stats.speed || 1
+            moveUnitOptimized(unit, unit.x, targetY, speed * 0.5, allUnits)
+          }
+        })
+      })
+
+      // Building attacks
+      ;[
+        { buildings: gs.playerBuildings, enemies: { troops: gs.enemyTroops }, towers: towers.enemy },
+        { buildings: gs.enemyBuildings, enemies: { troops: gs.playerTroops }, towers: towers.player },
+      ].forEach(({ buildings, enemies, towers: enemyTowers }) => {
+        buildings.forEach(building => {
+          const targets = enemies.troops.filter(t => t.hp > 0)
+          const range = building.card.stats.range || 100
+
+          const nearest = targets.length > 0
+            ? targets.reduce((closest, t) => {
+                const d = Math.hypot(t.x - building.x, t.y - building.y)
+                const dc = Math.hypot(closest.x - building.x, closest.y - building.y)
+                return d < dc ? t : closest
+              })
+            : null
+
+          if (nearest && Math.hypot(nearest.x - building.x, nearest.y - building.y) < range) {
+            const now = Date.now()
+            if (now - building.lastAttackTime > 1000 / (building.card.stats.attackSpeed || 1)) {
+              const damage = building.card.stats.damage || 50
+              nearest.hp -= damage
+              if (building.card.stats.splashRadius) {
+                targets.forEach(t => {
+                  if (Math.hypot(t.x - nearest.x, t.y - nearest.y) < building.card.stats.splashRadius) {
+                    t.hp -= damage * 0.6
+                  }
+                })
+              }
+              building.lastAttackTime = now
+            }
+          }
+        })
+      })
+
+      // Tower attacks
+      const towerAttack = (tower, troops) => {
+        if (tower.hp <= 0) return
+        const range = 150
+        const targets = troops.filter(t => Math.hypot(t.x - tower.x, t.y - tower.y) < range && t.hp > 0)
+        if (targets.length > 0) {
+          const target = targets[0]
+          const now = Date.now()
+          if (now - tower.lastAttackTime > 1000) {
+            target.hp -= 150
+            tower.lastAttackTime = now
+          }
+        }
+      }
+
+      Object.values(towers.player).forEach(tower => towerAttack(tower, gs.enemyTroops))
+      Object.values(towers.enemy).forEach(tower => towerAttack(tower, gs.playerTroops))
+
+      if (towers.player.kingTower.hp <= 0) {
+        gs.gameOver = true
+        gs.winner = 'enemy'
+      }
+      if (towers.enemy.kingTower.hp <= 0) {
+        gs.gameOver = true
+        gs.winner = 'player'
+      }
+
+      botPlayCard()
+
+      // Update UI - optimized
+      setGameStats(prev => ({
+        ...prev,
+        playerElixir: Math.floor(gs.playerElixir * 10) / 10,
+        enemyElixir: Math.floor(gs.enemyElixir * 10) / 10,
+        gameTime: Math.max(0, Math.floor(gs.gameTime / 1000)),
+        towers: {
+          playerKing: towers.player.kingTower.hp,
+          playerLeftPrincess: towers.player.princessLeft.hp,
+          playerRightPrincess: towers.player.princessRight.hp,
+          enemyKing: towers.enemy.kingTower.hp,
+          enemyLeftPrincess: towers.enemy.princessLeft.hp,
+          enemyRightPrincess: towers.enemy.princessRight.hp,
+        },
+        playerHPBars: gs.playerTroops.map(u => ({
+          id: u.id,
+          hp: u.hp,
+          maxHp: u.card.stats.hp,
+          x: u.x,
+          y: u.y,
+        })),
+        playerBuildingBars: gs.playerBuildings.map(b => ({
+          id: b.id,
+          hp: b.hp,
+          maxHp: b.card.stats.hp,
+          x: b.x,
+          y: b.y,
+        })),
+        enemyHPBars: gs.enemyTroops.map(u => ({
+          id: u.id,
+          hp: u.hp,
+          maxHp: u.card.stats.hp,
+          x: u.x,
+          y: u.y,
+        })),
+        enemyBuildingBars: gs.enemyBuildings.map(b => ({
+          id: b.id,
+          hp: b.hp,
+          maxHp: b.card.stats.hp,
+          x: b.x,
+          y: b.y,
+        })),
+        handState: CardCycleManager.getCurrentHandState(gs.playerHand),
+      }))
+
+      setUiState(prev => prev + 1)
+    }, 33)
+
+    return () => clearInterval(gameLoopInterval)
+  }, [screen, botPlayCard])
+
+  const renderArena = () => {
+    const gs = gameStateRef.current
+    const towers = towerStateRef.current
+
+    return (
+      <div
+        className="relative bg-gradient-to-b from-red-900 to-red-950 border-4 border-yellow-600 shadow-2xl overflow-hidden"
+        style={{ width: ARENA_WIDTH, height: ARENA_HEIGHT }}
+      >
+        {/* Midfield separator */}
+        <div className="absolute w-full h-px bg-yellow-600" style={{ top: ARENA_HEIGHT / 2 }} />
+
+        {/* Deployment zones visualization (debug) */}
+        {false && (
+          <>
+            <div
+              className="absolute deployment-zone"
+              style={{
+                left: DEPLOYMENT_ZONES.player.defense.x - DEPLOYMENT_ZONES.player.defense.width / 2,
+                top: DEPLOYMENT_ZONES.player.defense.y,
+                width: DEPLOYMENT_ZONES.player.defense.width,
+                height: DEPLOYMENT_ZONES.player.defense.height,
+              }}
+            />
+          </>
+        )}
+
+        {/* Spell zone preview */}
+        {spellZonePreview && (
+          <div
+            className="absolute spell-zone rounded-full border-2 border-yellow-400"
+            style={{
+              left: spellZonePreview.x - spellZonePreview.radius,
+              top: spellZonePreview.y - spellZonePreview.radius,
+              width: spellZonePreview.radius * 2,
+              height: spellZonePreview.radius * 2,
+            }}
+          />
+        )}
+
+        {/* Enemy towers */}
+        <div
+          className="absolute w-8 h-10 bg-gradient-to-b from-red-400 to-red-600 rounded border-2 border-yellow-400 flex items-center justify-center text-lg"
+          style={{ left: towers.enemy.kingTower.x - 16, top: towers.enemy.kingTower.y - 20 }}
+        >
+          👑
+        </div>
+        <div
+          className="absolute w-6 h-8 bg-red-500 rounded border border-yellow-300 flex items-center justify-center text-sm"
+          style={{ left: towers.enemy.princessLeft.x - 12, top: towers.enemy.princessLeft.y - 16 }}
+        >
+          🏰
+        </div>
+        <div
+          className="absolute w-6 h-8 bg-red-500 rounded border border-yellow-300 flex items-center justify-center text-sm"
+          style={{ left: towers.enemy.princessRight.x - 12, top: towers.enemy.princessRight.y - 16 }}
+        >
+          🏰
+        </div>
+
+        {/* Player towers */}
+        <div
+          className="absolute w-8 h-10 bg-gradient-to-b from-blue-400 to-blue-600 rounded border-2 border-yellow-400 flex items-center justify-center text-lg"
+          style={{ left: towers.player.kingTower.x - 16, top: towers.player.kingTower.y - 20 }}
+        >
+          👑
+        </div>
+        <div
+          className="absolute w-6 h-8 bg-blue-500 rounded border border-yellow-300 flex items-center justify-center text-sm"
+          style={{ left: towers.player.princessLeft.x - 12, top: towers.player.princessLeft.y - 16 }}
+        >
+          🏰
+        </div>
+        <div
+          className="absolute w-6 h-8 bg-blue-500 rounded border border-yellow-300 flex items-center justify-center text-sm"
+          style={{ left: towers.player.princessRight.x - 12, top: towers.player.princessRight.y - 16 }}
+        >
+          🏰
+        </div>
+
+        {/* Enemy units - optimized rendering */}
+        {gs.enemyTroops.map(unit => (
+          <div
+            key={unit.id}
+            className="unit absolute w-6 h-6 bg-red-500 rounded-full border border-yellow-300 flex items-center justify-center text-xs font-bold shadow-lg"
+            style={{
+              left: unit.x - 12,
+              top: unit.y - 12,
+              opacity: unit.frozen && unit.frozen > 0 ? 0.5 : 1,
+            }}
+          >
+            {unit.card.emoji}
+          </div>
+        ))}
+
+        {/* Player units */}
+        {gs.playerTroops.map(unit => (
+          <div
+            key={unit.id}
+            className="unit absolute w-6 h-6 bg-blue-500 rounded-full border border-yellow-300 flex items-center justify-center text-xs font-bold shadow-lg"
+            style={{
+              left: unit.x - 12,
+              top: unit.y - 12,
+              opacity: unit.frozen && unit.frozen > 0 ? 0.5 : 1,
+            }}
+          >
+            {unit.card.emoji}
+          </div>
+        ))}
+
+        {/* Enemy buildings */}
+        {gs.enemyBuildings.map(building => (
+          <div
+            key={building.id}
+            className="unit absolute w-8 h-8 bg-red-600 rounded border-2 border-yellow-500 flex items-center justify-center text-xs font-bold shadow-lg"
+            style={{ left: building.x - 14, top: building.y - 14 }}
+          >
+            {building.card.emoji}
+          </div>
+        ))}
+
+        {/* Player buildings */}
+        {gs.playerBuildings.map(building => (
+          <div
+            key={building.id}
+            className="unit absolute w-8 h-8 bg-blue-600 rounded border-2 border-yellow-500 flex items-center justify-center text-xs font-bold shadow-lg"
+            style={{ left: building.x - 14, top: building.y - 14 }}
+          >
+            {building.card.emoji}
+          </div>
+        ))}
+
+        {/* HP bars - contained for performance */}
+        {gameStats.playerHPBars.map(bar => (
+          <div
+            key={`hp-${bar.id}`}
+            className="hp-bar absolute w-10 h-1 bg-red-900 rounded"
+            style={{ left: bar.x - 20, top: bar.y - 20 }}
+          >
+            <div
+              className="h-full bg-green-500 rounded transition-all"
+              style={{ width: `${(bar.hp / bar.maxHp) * 100}%` }}
+            />
+          </div>
+        ))}
+
+        {gameStats.enemyHPBars.map(bar => (
+          <div
+            key={`hp-${bar.id}`}
+            className="hp-bar absolute w-10 h-1 bg-red-900 rounded"
+            style={{ left: bar.x - 20, top: bar.y - 20 }}
+          >
+            <div
+              className="h-full bg-green-500 rounded transition-all"
+              style={{ width: `${(bar.hp / bar.maxHp) * 100}%` }}
+            />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  const renderUI = () => {
+    const gs = gameStateRef.current
+    const towers = towerStateRef.current
+
+    return (
+      <div className="w-full max-w-2xl">
+        {/* Top bar - Enhanced with mid-battle stats */}
+        <div className="flex justify-between items-center bg-gray-900 text-white p-3 rounded-t border-2 border-yellow-600">
+          <div className="flex gap-4 text-sm">
+            <div className="flex gap-1 items-center">
+              <span>❤️</span>
+              <span className="font-bold">{Math.max(0, Math.floor(towers.enemy.kingTower.hp))}</span>
+            </div>
+            <div className="flex gap-1 items-center">
+              <span>🏰</span>
+              <span className="font-bold">{Math.max(0, Math.floor(towers.enemy.princessLeft.hp))}</span>
+            </div>
+            <div className="flex gap-1 items-center">
+              <span>🏰</span>
+              <span className="font-bold">{Math.max(0, Math.floor(towers.enemy.princessRight.hp))}</span>
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-xl font-bold text-yellow-400">{gameStats.gameTime}s</div>
+            {gameStats.gameTime < 60 && gameStats.gameTime > 0 && (
+              <div className="text-xs text-yellow-300">⚡ Double Elixir!</div>
+            )}
+          </div>
+          <div className="flex gap-4 text-sm">
+            <div className="flex gap-1 items-center">
+              <span>❤️</span>
+              <span className="font-bold">{Math.max(0, Math.floor(towers.player.kingTower.hp))}</span>
+            </div>
+            <div className="flex gap-1 items-center">
+              <span>🏰</span>
+              <span className="font-bold">{Math.max(0, Math.floor(towers.player.princessLeft.hp))}</span>
+            </div>
+            <div className="flex gap-1 items-center">
+              <span>🏰</span>
+              <span className="font-bold">{Math.max(0, Math.floor(towers.player.princessRight.hp))}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Arena */}
+        <div className="flex justify-center">{renderArena()}</div>
+
+        {/* Elixir bar */}
+        <div className="bg-gray-900 text-white p-3 flex items-center gap-2 border-x-2 border-yellow-600">
+          <span className="text-sm font-bold w-12">Elixir</span>
+          <div className="flex-1 bg-gray-800 rounded h-6 border-2 border-purple-500 relative overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-purple-600 to-purple-400 transition-all"
+              style={{ width: `${(gameStats.playerElixir / 10) * 100}%` }}
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">
+              {Math.floor(gameStats.playerElixir)}/10
+            </span>
+          </div>
+          <span className="text-xs text-gray-400">Next: {gameStats.handState.nextCard && CARDS[gameStats.handState.nextCard]?.emoji}</span>
+        </div>
+
+        {/* Hand */}
+        <div className="bg-gray-800 text-white p-3 border-2 border-yellow-600 rounded-b">
+          <div className="grid grid-cols-4 gap-2">
+            {gs.playerHand.map((handItem, idx) => {
+              const card = CARDS[handItem.cardId]
+              return (
+                <button
+                  key={handItem.id}
+                  onMouseEnter={(e) => handleCardHover(handItem.cardId, e)}
+                  onMouseLeave={() => setShowCardPreview(null)}
+                  onClick={() => playCard(handItem.cardId, true)}
+                  disabled={gameStats.playerElixir < card.elixirCost || gs.gameOver}
+                  className={`card-btn hand-card ${idx === 0 ? 'new-card' : ''} p-2 rounded border-2 transition-all text-center ${
+                    gameStats.playerElixir < card.elixirCost
+                      ? 'bg-gray-700 border-gray-600 opacity-50 cursor-not-allowed'
+                      : 'bg-gradient-to-b from-purple-600 to-purple-800 border-yellow-400 hover:shadow-lg hover:scale-105 cursor-pointer'
+                  }`}
+                >
+                  <div className="text-2xl">{card.emoji}</div>
+                  <div className="text-xs font-bold">{card.name.slice(0, 8)}</div>
+                  <div className="text-xs text-yellow-300">{card.elixirCost}</div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Card preview tooltip
+  const renderCardPreview = () => {
+    if (!showCardPreview) return null
+    const card = CARDS[showCardPreview]
+    if (!card) return null
+
+    return (
+      <div
+        className="tooltip"
+        style={{
+          left: `${previewPos.x}px`,
+          top: `${previewPos.y}px`,
+          transform: 'translate(-50%, -100%)',
+        }}
+      >
+        <div className="text-lg mb-2">{card.emoji} {card.name}</div>
+        <div className="text-xs mb-2 opacity-80">{card.description}</div>
+        <div className="text-xs space-y-1">
+          {card.type === 'spell' ? (
+            <>
+              <div>💥 Radius: {card.stats.splashRadius}</div>
+              <div>⚡ Damage: {card.stats.damage}</div>
+            </>
+          ) : (
+            <>
+              <div>❤️ HP: {card.stats.hp}</div>
+              <div>⚡ Damage: {card.stats.damage}</div>
+              <div>🏃 Speed: {card.stats.speed}</div>
+              <div>🎯 Range: {card.stats.range}</div>
+            </>
+          )}
+          <div className="mt-2 pt-2 border-t border-gray-600">
+            💜 Cost: {card.elixirCost} elixir
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Menu screen
+  if (screen === 'menu') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-4">
+        <div className="text-6xl font-bold mb-4 text-yellow-400 drop-shadow-lg">⚔️ Clash Royale</div>
+        <div className="text-2xl mb-8 text-gray-300">Enhanced Edition</div>
+
+        {/* Stats Display */}
+        <div className="mb-6 p-4 bg-gray-800 rounded-lg border-2 border-yellow-600">
+          <h3 className="text-yellow-400 font-bold mb-2">📊 Your Stats</h3>
+          <div className="text-sm space-y-1">
+            <div>Wins: {matchStats.wins} | Losses: {matchStats.losses} | Ties: {matchStats.ties}</div>
+            <div>Win Rate: {matchStats.winRate}% | Avg Duration: {matchStats.avgDuration}s</div>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-lg mb-4">Select Difficulty:</p>
+          <div className="flex gap-4">
+            {['easy', 'medium', 'hard'].map(diff => (
+              <button
+                key={diff}
+                onClick={() => setDifficulty(diff)}
+                className={`px-6 py-3 rounded-lg font-bold transition-all ${
+                  difficulty === diff
+                    ? 'bg-yellow-500 text-black scale-110'
+                    : 'bg-gray-700 text-white hover:bg-gray-600'
+                }`}
+              >
+                {diff.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            setSelectedDeck([])
+            setScreen('deckBuilder')
+          }}
+          className="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg rounded-lg hover:shadow-lg hover:scale-105 transition-all"
+        >
+          Build Deck
+        </button>
+      </div>
+    )
+  }
+
+  // Deck builder screen
+  if (screen === 'deckBuilder') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-4 overflow-y-auto">
+        <h1 className="text-4xl font-bold mb-2 text-yellow-400">Build Your Deck</h1>
+        <p className="text-lg mb-2">Select exactly 8 cards (Current: {selectedDeck.length}/8)</p>
+
+        <div className="mb-4 text-center">
+          <p className="text-lg">Average Elixir Cost: {selectedDeck.length > 0 ? (selectedDeck.reduce((sum, cardId) => sum + CARDS[cardId].elixirCost, 0) / selectedDeck.length).toFixed(1) : 0}</p>
+          <p className="text-sm text-gray-400">Recommended: 3.5 - 4.5</p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 max-w-4xl">
+          {CARD_ARRAY.map(card => {
+            const selectedCount = selectedDeck.filter(cid => cid === card.id).length
+            const isSelected = selectedCount > 0
+            return (
+              <button
+                key={card.id}
+                onClick={() => {
+                  if (selectedCount > 0 && selectedDeck.length > 0) {
+                    setSelectedDeck(selectedDeck.filter((cid, idx) => !(cid === card.id && selectedDeck.indexOf(cid) === idx)))
+                  } else if (selectedCount < 2 && selectedDeck.length < 8) {
+                    setSelectedDeck([...selectedDeck, card.id])
+                  }
+                }}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  isSelected
+                    ? 'border-yellow-400 bg-gradient-to-b from-purple-600 to-purple-800 shadow-lg scale-105'
+                    : 'border-gray-600 bg-gray-800 hover:border-gray-400'
+                }`}
+                onMouseEnter={(e) => handleCardHover(card.id, e)}
+                onMouseLeave={() => setShowCardPreview(null)}
+              >
+                <div className="text-3xl mb-2">{card.emoji}</div>
+                <div className="text-xs font-bold">{card.name}</div>
+                <div className="text-xs text-yellow-300">{card.elixirCost} elixir</div>
+                <div className="text-xs text-gray-400">{card.type}</div>
+                {isSelected && <div className="text-xs text-yellow-400 mt-1">x{selectedCount}</div>}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex gap-4">
+          <button
+            onClick={() => {
+              setSelectedDeck([])
+              setScreen('menu')
+            }}
+            className="px-6 py-3 bg-gray-700 text-white font-bold rounded-lg hover:bg-gray-600 transition-all"
+          >
+            Back
+          </button>
+          <button
+            onClick={() => {
+              if (selectedDeck.length === 8) {
+                initializeGame()
+                setScreen('battle')
+              }
+            }}
+            disabled={selectedDeck.length !== 8}
+            className={`px-8 py-3 font-bold rounded-lg transition-all ${
+              selectedDeck.length === 8
+                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg hover:scale-105 cursor-pointer'
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-50'
+            }`}
+          >
+            Start Battle {selectedDeck.length === 8 ? '✓' : `(${selectedDeck.length}/8)`}
+          </button>
+        </div>
+
+        {renderCardPreview()}
+      </div>
+    )
+  }
+
+  // Battle screen
+  if (screen === 'battle') {
+    if (gameStateRef.current.gameOver) {
+      const gs = gameStateRef.current
+      const towers = towerStateRef.current
+      const playerTowerHp = Object.values(towers.player).reduce((sum, t) => sum + t.hp, 0)
+      const enemyTowerHp = Object.values(towers.enemy).reduce((sum, t) => sum + t.hp, 0)
+      const actualWinner = enemyTowerHp < playerTowerHp ? 'player' : enemyTowerHp > playerTowerHp ? 'enemy' : 'tie'
+
+      // Save match to history
+      useEffect(() => {
+        MatchHistoryManager.save({
+          result: actualWinner === 'player' ? 'win' : actualWinner === 'loss' ? 'loss' : 'tie',
+          playerTowerHp,
+          enemyTowerHp,
+          duration: Math.floor((Date.now() - gs.startTime) / 1000),
+          difficulty,
+          deckSize: selectedDeck.length,
+          usedCards: gs.usedCards,
+          deckAvgCost: selectedDeck.length > 0 ? (selectedDeck.reduce((sum, cardId) => sum + CARDS[cardId].elixirCost, 0) / selectedDeck.length).toFixed(1) : 0,
+        })
+        setMatchStats(MatchHistoryManager.getStats())
+      }, [])
+
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-4">
+          <div className={`text-5xl font-bold mb-4 ${actualWinner === 'player' ? 'text-green-400' : 'text-red-400'}`}>
+            {actualWinner === 'player' ? '🎉 Victory!' : actualWinner === 'tie' ? '⚔️ Tie!' : '💀 Defeat!'}
+          </div>
+          <div className="text-2xl mb-6 text-center">
+            Your Towers: {Math.max(0, Math.floor(playerTowerHp))} HP
+            <br />
+            Enemy Towers: {Math.max(0, Math.floor(enemyTowerHp))} HP
+          </div>
+          <button
+            onClick={() => {
+              setScreen('menu')
+            }}
+            className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg rounded-lg hover:shadow-lg hover:scale-105 transition-all"
+          >
+            Play Again
+          </button>
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-4 overflow-hidden">
+        {renderUI()}
+        {renderCardPreview()}
+      </div>
+    )
+  }
+
+  return null
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'))
+root.render(<ClashRoyaleGameEnhanced />)
+    </script>
+  </body>
+</html>
