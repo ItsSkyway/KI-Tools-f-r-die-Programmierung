@@ -457,8 +457,9 @@ const ELIXIR_MULTIPLIERS = {
 
 const findNearestEnemy = (unit, enemies, towers) => {
   let nearest = null, minDist = Infinity
-  const range = unit.stats?.range || 100
-  if (unit.stats?.targetBuildings && enemies.buildings) {
+  const range = unit.card?.stats?.range || unit.stats?.range || 100
+  const targetsBuildings = unit.card?.stats?.targetBuildings || unit.stats?.targetBuildings
+  if (targetsBuildings && enemies.buildings) {
     enemies.buildings.forEach(b => {
       if (b && b.hp > 0) {
         const dist = Math.hypot((b.x || 0) - (unit.x || 0), (b.y || 0) - (unit.y || 0))
@@ -466,7 +467,7 @@ const findNearestEnemy = (unit, enemies, towers) => {
       }
     })
   }
-  if (unit.stats?.targetBuildings && towers) {
+  if (targetsBuildings && towers) {
     towers.forEach(t => {
       if (t && t.hp > 0) {
         const dist = Math.hypot((t.x || 0) - (unit.x || 0), (t.y || 0) - (unit.y || 0))
@@ -474,11 +475,85 @@ const findNearestEnemy = (unit, enemies, towers) => {
       }
     })
   }
-  if (enemies.troops) {
+  if (!targetsBuildings && enemies.troops) {
     enemies.troops.forEach(t => {
       if (t && t.hp > 0) {
         const dist = Math.hypot((t.x || 0) - (unit.x || 0), (t.y || 0) - (unit.y || 0))
         if (dist < range && dist < minDist) { nearest = t; minDist = dist; }
+      }
+    })
+  }
+  if (!targetsBuildings && !nearest) {
+    if (enemies.buildings) {
+      enemies.buildings.forEach(b => {
+        if (b && b.hp > 0) {
+          const dist = Math.hypot((b.x || 0) - (unit.x || 0), (b.y || 0) - (unit.y || 0))
+          if (dist < range && dist < minDist) { nearest = b; minDist = dist; }
+        }
+      })
+    }
+    if (towers) {
+      towers.forEach(t => {
+        if (t && t.hp > 0) {
+          const dist = Math.hypot((t.x || 0) - (unit.x || 0), (t.y || 0) - (unit.y || 0))
+          if (dist < range && dist < minDist) { nearest = t; minDist = dist; }
+        }
+      })
+    }
+  }
+  return nearest
+}
+
+// Find nearest enemy for movement (no range limit) - units always walk toward a target
+const findMovementTarget = (unit, enemies, towers) => {
+  let nearest = null, minDist = Infinity
+  const targetsBuildings = unit.card?.stats?.targetBuildings || unit.stats?.targetBuildings
+
+  // Building-targeting units (Giant, Hog Rider): walk toward nearest tower or placed building, ignore troops
+  if (targetsBuildings) {
+    if (towers) {
+      towers.forEach(t => {
+        if (t && t.hp > 0) {
+          const dist = Math.hypot((t.x || 0) - (unit.x || 0), (t.y || 0) - (unit.y || 0))
+          if (dist < minDist) { nearest = t; minDist = dist; }
+        }
+      })
+    }
+    if (enemies.buildings) {
+      enemies.buildings.forEach(b => {
+        if (b && b.hp > 0) {
+          const dist = Math.hypot((b.x || 0) - (unit.x || 0), (b.y || 0) - (unit.y || 0))
+          if (dist < minDist) { nearest = b; minDist = dist; }
+        }
+      })
+    }
+    return nearest
+  }
+
+  // Regular units: nearest troop first
+  if (enemies.troops) {
+    enemies.troops.forEach(t => {
+      if (t && t.hp > 0) {
+        const dist = Math.hypot((t.x || 0) - (unit.x || 0), (t.y || 0) - (unit.y || 0))
+        if (dist < minDist) { nearest = t; minDist = dist; }
+      }
+    })
+  }
+  // Then placed buildings
+  if (enemies.buildings) {
+    enemies.buildings.forEach(b => {
+      if (b && b.hp > 0) {
+        const dist = Math.hypot((b.x || 0) - (unit.x || 0), (b.y || 0) - (unit.y || 0))
+        if (dist < minDist) { nearest = b; minDist = dist; }
+      }
+    })
+  }
+  // If no troops or buildings, walk toward the nearest alive tower
+  if (!nearest && towers) {
+    towers.forEach(t => {
+      if (t && t.hp > 0) {
+        const dist = Math.hypot((t.x || 0) - (unit.x || 0), (t.y || 0) - (unit.y || 0))
+        if (dist < minDist) { nearest = t; minDist = dist; }
       }
     })
   }
@@ -1020,14 +1095,13 @@ function ClashRoyaleGame() {
         units.forEach(unit => {
           if (!unit || unit.hp <= 0 || (unit.frozen && unit.frozen > 0)) return
 
-          const target = findNearestEnemy(unit, enemies, Object.values(enemyTowers))
-          if (target) {
-            const speed = (unit.card.stats.speed || 1) * (deltaMs / 33)
-            moveUnit(unit, target.x, target.y, speed)
+          const speed = (unit.card.stats.speed || 1) * (deltaMs / 33)
+          const movTarget = findMovementTarget(unit, enemies, Object.values(enemyTowers))
+          if (movTarget) {
+            moveUnit(unit, movTarget.x, movTarget.y, speed)
           } else {
-            // No target - move to enemy side
+            // Fallback: advance toward enemy base if all towers gone
             const targetY = isPlayer ? 0 : ARENA_HEIGHT
-            const speed = (unit.card.stats.speed || 1) * 0.5 * (deltaMs / 33)
             moveUnit(unit, unit.x, targetY, speed)
           }
         })
