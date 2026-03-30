@@ -1,0 +1,537 @@
+/**
+ * theme.css
+ * ============================================================================
+ * Unified Design System for Clash Royale Dark Fantasy UI
+ * 
+ * This centralized theme system provides:
+ * - Consistent color palette across all UI elements
+ * - Professional dark fantasy aesthetic
+ * - Accessibility-compliant color ratios (WCAG AA minimum)
+ * - Performance-optimized animations and transitions
+ * - Reusable component patterns
+ * ============================================================================
+ */
+
+/* ============================================================================
+   ROOT COLOR TOKENS - Dark Fantasy Theme
+   ============================================================================ */
+:root {
+  /* ---- BACKGROUND COLORS ---- */
+  /* Dark Fantasy Color Palette */
+  --color-bg-darkest: #0a0e27;      /* Darkest - Near black with purple tint */
+  --color-bg-darker: #1a0a2e;       /* Darker - Deep purple */
+  --color-bg-dark: #0f0420;         /* Dark - Darkest purple */
+  --color-bg-panel: rgba(31, 41, 55, 0.95);  /* Semi-transparent dark gray */
+  --color-bg-overlay: rgba(15, 4, 32, 0.8);  /* Dark overlay for modals */
+  
+  /* ---- PRIMARY COLORS ---- */
+  /* Purple: Main brand color */
+  --color-primary: #9333ea;         /* Deep purple */
+  --color-primary-bright: #a855f7;  /* Bright purple for accents */
+  --color-primary-light: #c084fc;   /* Light purple for hover states */
+  --color-primary-pale: rgba(147, 51, 234, 0.15);  /* Pale purple for backgrounds */
+  
+  /* ---- ACCENT COLORS ---- */
+  /* Gold: Legendary/Premium items */
+  --color-accent-gold: #fbbf24;     /* Gold primary */
+  --color-accent-gold-dark: #b8860b; /* Gold dark for depth */
+  --color-accent-gold-light: #fcd34d; /* Gold light for highlights */
+  
+  /* Green: Player/Success/Positive */
+  --color-accent-green: #10b981;    /* Emerald green */
+  --color-accent-green-dark: #059669; /* Dark green for depth */
+  --color-accent-green-light: #6ee7b7; /* Light green for highlights */
+  
+  /* Red: Enemy/Danger/Negative */
+  --color-accent-red: #ef4444;      /* Bright red */
+  --color-accent-red-dark: #dc2626; /* Dark red for depth */
+  --color-accent-red-light: #fca5a5; /* Light red for highlights */
+  
+  /* Yellow: Warning/Secondary */
+  --color-accent-yellow: #f59e0b;   /* Amber yellow */
+  --color-accent-yellow-dark: #d97706; /* Dark yellow for depth */
+  
+  /* Blue: Information/River Divider */
+  --color-accent-blue: #3b82f6;     /* Sky blue */
+  --color-accent-blue-dark: #1d4ed8; /* Dark blue for depth */
+  
+  /* ---- NEUTRAL COLORS ---- */
+  --color-text-primary: #f9fafb;    /* Nearly white text */
+  --color-text-secondary: #d1d5db;  /* Light gray text */
+  --color-text-tertiary: #9ca3af;   /* Medium gray text */
+  --color-text-disabled: #6b7280;   /* Disabled text */
+  
+  --color-border: rgba(147, 51, 234, 0.3);  /* Purple-tinted border */
+  --color-border-light: rgba(147, 51, 234, 0.15);  /* Light border */
+  --color-border-highlight: rgba(147, 51, 234, 0.6);  /* Highlighted border */
+  
+  /* ---- RARITY GRADIENTS ---- */
+  /* Card rarity color schemes */
+  --gradient-rarity-common: linear-gradient(135deg, #6B4423 0%, #C9A961 100%);
+  --gradient-rarity-rare: linear-gradient(135deg, #1E5F9E 0%, #4A9FD8 100%);
+  --gradient-rarity-epic: linear-gradient(135deg, #6B2D7F 0%, #A855F7 100%);
+  --gradient-rarity-legendary: linear-gradient(135deg, #B8860B 0%, #FF8C00 100%);
+  
+  /* ---- SHADOW SYSTEM ---- */
+  /* Professional depth and elevation */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.8);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.9);
+  --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  /* Glowing shadows for epic/legendary elements */
+  --shadow-glow-purple: 0 0 20px rgba(147, 51, 234, 0.4);
+  --shadow-glow-gold: 0 0 30px rgba(255, 165, 0, 0.6);
+  --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.3);
+  --shadow-glow-red: 0 0 20px rgba(239, 68, 68, 0.3);
+  
+  /* ---- TYPOGRAPHY ---- */
+  --font-family-display: 'Clash Royale', 'Arial Black', sans-serif;
+  --font-family-body: 'Arial', sans-serif;
+  --font-family-mono: 'Courier New', monospace;
+  
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-4xl: 2.25rem;   /* 36px */
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  
+  /* ---- SPACING SYSTEM ---- */
+  /* Base unit: 4px */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  
+  /* ---- BORDER RADIUS ---- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  
+  /* ---- TRANSITIONS & ANIMATIONS ---- */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);  /* Bounce/spring */
+  
+  /* ---- BACKDROP & GLASS-MORPHISM ---- */
+  --backdrop-blur: 8px;
+  --backdrop-blur-strong: 10px;
+}
+
+/* ============================================================================
+   UTILITY CLASSES - Reusable Design Patterns
+   ============================================================================ */
+
+/* ---- TEXT UTILITIES ---- */
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-accent-gold {
+  color: var(--color-accent-gold);
+  font-weight: var(--font-weight-bold);
+}
+
+.text-accent-green {
+  color: var(--color-accent-green);
+}
+
+.text-accent-red {
+  color: var(--color-accent-red);
+}
+
+/* ---- BACKGROUND UTILITIES ---- */
+.bg-dark {
+  background-color: var(--color-bg-darkest);
+}
+
+.bg-darker {
+  background-color: var(--color-bg-darker);
+}
+
+.bg-panel {
+  background-color: var(--color-bg-panel);
+}
+
+/* ---- BORDER UTILITIES ---- */
+.border-primary {
+  border-color: var(--color-border);
+}
+
+.border-highlight {
+  border-color: var(--color-border-highlight);
+}
+
+/* ---- SHADOW UTILITIES ---- */
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+.shadow-glow-purple {
+  box-shadow: var(--shadow-glow-purple);
+}
+
+.shadow-glow-gold {
+  box-shadow: var(--shadow-glow-gold);
+}
+
+/* ---- OPACITY UTILITIES ---- */
+.opacity-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.opacity-hover {
+  transition: opacity var(--transition-fast);
+}
+
+.opacity-hover:hover {
+  opacity: 0.8;
+}
+
+/* ============================================================================
+   COMPONENT BASE STYLES
+   ============================================================================ */
+
+/* ---- BUTTON BASE ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  border: 2px solid;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+  user-select: none;
+  text-decoration: none;
+  overflow: hidden;
+  position: relative;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-primary-bright);
+  outline-offset: 2px;
+}
+
+/* Button Primary */
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-text-primary);
+  border-color: var(--color-primary-bright);
+  box-shadow: var(--shadow-md), var(--shadow-glow-purple);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-bright);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-purple);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0px);
+}
+
+/* Button Secondary */
+.btn-secondary {
+  background: var(--color-bg-panel);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-highlight);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(31, 41, 55, 1);
+  border-color: var(--color-primary-bright);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-purple);
+}
+
+/* ---- INPUT BASE ---- */
+.input {
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-darker);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-base);
+  transition: all var(--transition-normal);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary-bright);
+  box-shadow: 0 0 0 3px var(--color-primary-pale);
+}
+
+.input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* ---- CARD BASE ---- */
+.card {
+  background: linear-gradient(135deg, rgba(55, 65, 81, 0.9) 0%, rgba(31, 41, 55, 0.95) 100%);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-md), var(--shadow-inner);
+  transition: all var(--transition-normal);
+  overflow: hidden;
+  position: relative;
+}
+
+.card:hover {
+  border-color: var(--color-border-highlight);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-purple), var(--shadow-inner);
+  transform: translateY(-2px);
+}
+
+/* ---- PANEL BASE ---- */
+.panel {
+  background: var(--color-bg-panel);
+  backdrop-filter: blur(var(--backdrop-blur));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ============================================================================
+   RARITY BADGE UTILITIES
+   ============================================================================ */
+
+.rarity-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rarity-badge-common {
+  background: linear-gradient(135deg, #6B4423 0%, #C9A961 100%);
+  color: #000;
+  box-shadow: 0 0 10px rgba(107, 68, 35, 0.5);
+}
+
+.rarity-badge-rare {
+  background: linear-gradient(135deg, #1E5F9E 0%, #4A9FD8 100%);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(30, 95, 158, 0.5);
+}
+
+.rarity-badge-epic {
+  background: linear-gradient(135deg, #6B2D7F 0%, #A855F7 100%);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+}
+
+.rarity-badge-legendary {
+  background: linear-gradient(135deg, #B8860B 0%, #FF8C00 100%);
+  color: #000;
+  box-shadow: 0 0 20px rgba(255, 140, 0, 0.8);
+}
+
+/* ============================================================================
+   ANIMATION KEYFRAMES - Professional Motion Design
+   ============================================================================ */
+
+/* Glow pulse animation */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(147, 51, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.8);
+  }
+}
+
+/* Smooth fade-in */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Smooth scale-in with bounce */
+@keyframes scale-bounce-in {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Slide down */
+@keyframes slide-down {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Slide up */
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Float animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Pulse scale */
+@keyframes pulse-scale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* ============================================================================
+   DARK MODE SUPPORT (Already implemented as default)
+   ============================================================================ */
+
+/* For future light mode support, uncomment and customize:
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg-darkest: #f9fafb;
+    --color-bg-darker: #f3f4f6;
+    --color-text-primary: #111827;
+    --color-text-secondary: #4b5563;
+    / * ... additional light mode colors * /
+  }
+}
+
+*/
+
+/* ============================================================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================================================ */
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  :root {
+    --color-border: rgba(147, 51, 234, 0.6);
+    --color-border-highlight: rgba(147, 51, 234, 0.9);
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE BREAKPOINTS
+   ============================================================================ */
+
+/* Mobile first approach */
+
+/* Small devices (640px and up) */
+@media (min-width: 640px) {
+  :root {
+    --font-size-base: 1rem;
+  }
+}
+
+/* Medium devices (768px and up) */
+@media (min-width: 768px) {
+  :root {
+    --font-size-base: 1.0625rem;
+  }
+}
+
+/* Large devices (1024px and up) */
+@media (min-width: 1024px) {
+  :root {
+    --font-size-base: 1.125rem;
+  }
+}
+
+/* Extra large devices (1280px and up) */
+@media (min-width: 1280px) {
+  :root {
+    --font-size-base: 1.1875rem;
+  }
+}

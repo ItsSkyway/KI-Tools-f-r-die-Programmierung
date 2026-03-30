@@ -86,6 +86,7 @@ export const useGameState = initialDeck => {
     gs.lastCardPlayTime = { player: 0, enemy: 0 }
     gs.freezeZones = []
     gs.activeSpells = [] // PHASE 1: Initialize spell tracking
+    gs.projectiles = [] // Initialize arrow projectiles array
 
     // Initialize towers
     towerStateRef.current.player = initializeTowers('player')

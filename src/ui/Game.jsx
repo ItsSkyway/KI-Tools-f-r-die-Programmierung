@@ -55,6 +55,12 @@ export default function Game() {
       audioInitializedRef.current = true
       soundManager.playSfx('matchStart')
       console.log('🎮 Game started - Audio & Animation systems ready')
+      
+      // TESTING: Expose game state to window for integration tests
+      window.__gameState__ = gameStateRef.current
+      window.__towers__ = towerStateRef.current
+      console.log('🧪 Test access enabled: window.__gameState__ and window.__towers__')
+      console.log('📝 Run: runIntegrationTests() to start testing')
     }
 
     // Start animation loop
@@ -246,13 +252,22 @@ export default function Game() {
   }
 
   return (
-    <div style={{ width: 600, height: 800, margin: '0 auto', background: '#1a1a1a', color: '#fff', fontFamily: 'Arial', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ 
+      width: 800, 
+      height: 1000, 
+      margin: '0 auto', 
+      background: 'var(--color-bg-darkest)', 
+      color: 'var(--color-text-primary)', 
+      fontFamily: 'var(--font-family-body)', 
+      display: 'flex', 
+      flexDirection: 'column' 
+    }}>
       {screen === 'deckBuilder' && (
         <DeckBuilder onDeckSelect={handleDeckSelect} />
       )}
 
       {screen === 'playing' && (
-        <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'relative', width: '100%', display: 'flex', flexDirection: 'column' }}>
           {/* Sound Control Button */}
           <button
             onClick={_handleSoundToggle}
@@ -261,18 +276,28 @@ export default function Game() {
               top: 10,
               right: 10,
               zIndex: 1000,
-              background: 'rgba(0,0,0,0.6)',
-              border: '1px solid #fff',
-              color: '#fff',
-              width: 40,
-              height: 40,
-              borderRadius: 4,
+              background: 'rgba(0, 0, 0, 0.7)',
+              border: '2px solid var(--color-border-highlight)',
+              color: 'var(--color-text-primary)',
+              width: 44,
+              height: 44,
+              borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
-              fontSize: 18,
+              fontSize: 20,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'all 0.2s'
+              transition: 'all var(--transition-smooth)',
+              boxShadow: 'var(--shadow-md)',
+              backdropFilter: `blur(${4}px)`,
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.boxShadow = 'var(--shadow-lg), var(--shadow-glow-purple)';
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.boxShadow = 'var(--shadow-md)';
+              e.target.style.transform = 'translateY(0)';
             }}
             title={soundManager.isMuted ? 'Unmute' : 'Mute'}
           >

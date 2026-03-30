@@ -1,7 +1,7 @@
 /**
  * unitMovement.js
- * Unit movement with lane-based pathfinding and river crossing
- * Integrates with arena.js for lane system
+ * Unit movement with lane-based pathfinding, bridge crossing, and drowning mechanics
+ * Integrates with arena.js for lane system and bridges
  */
 
 import {
@@ -14,6 +14,13 @@ import {
   isUnitDrowning,
 } from './arena.js'
 
+import {
+  calculatePathWithBridges,
+  moveUnitAlongPath,
+  checkAndApplyDrowningDamage,
+  getDrowningVisualEffect,
+} from '../simulation/pathfinding.js'
+
 import { LANES, RIVER_Y, BRIDGES } from './constants.js'
 
 // ============================================================================
@@ -22,27 +29,37 @@ import { LANES, RIVER_Y, BRIDGES } from './constants.js'
 
 /**
  * Update unit position with lane and river constraints
+ * Includes bridge-aware pathfinding and drowning damage application
  */
 export function updateUnitPosition(unit, targetX, targetY, speed = 1) {
   if (!unit) return unit
 
-  const newPosition = calculateLaneMovement(unit, targetX, targetY, speed)
+  // Recalculate path if needed for bridge-aware pathfinding
+  if (!unit.currentPath || unit.currentPath.length === 0) {
+    unit.currentPath = calculatePathWithBridges(unit.x, unit.y, targetX, targetY, unit.lane || 'center')
+  }
 
-  const updatedUnit = {
-    ...unit,
-    x: newPosition.x,
-    y: newPosition.y,
+  // Use pathfinding if available
+  if (unit.currentPath && unit.currentPath.length > 0) {
+    const result = moveUnitAlongPath(unit, unit.currentPath, speed)
+    unit.x = result.unit.x
+    unit.y = result.unit.y
+  } else {
+    // Fallback to direct movement with lane constraints
+    const newPosition = calculateLaneMovement(unit, targetX, targetY, speed)
+    unit.x = newPosition.x
+    unit.y = newPosition.y
   }
 
   // Apply drowning damage if in river without bridge
-  if (isUnitDrowning(updatedUnit)) {
-    updatedUnit.hp = Math.max(0, updatedUnit.hp - 0.2) // Damage per tick
-    updatedUnit.isDrowning = true
-  } else {
-    updatedUnit.isDrowning = false
+  unit = checkAndApplyDrowningDamage(unit, speed)
+
+  // Get visual effects for rendering
+  if (unit.isDrowning) {
+    unit.drowningEffects = getDrowningVisualEffect(unit)
   }
 
-  return updatedUnit
+  return unit
 }
 
 /**

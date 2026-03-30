@@ -8,11 +8,13 @@
  * - Bridge crossings
  * - Tower rendering
  * - Unit rendering with lane indicators
+ * - Projectile rendering (arrows)
  */
 
 import React, { useEffect, useRef } from 'react'
 import { LANES, BRIDGES, RIVER_Y, ENEMY_TERRITORY_END, PLAYER_TERRITORY_START } from '../game/constants'
 import { isUnitDrowning, isBridgeCrossing, isInRiverZone } from '../game/arena'
+import { renderProjectiles } from '../simulation/projectiles.js'
 
 /**
  * Main arena renderer component
@@ -63,7 +65,7 @@ export default function ArenaRenderer({ gameState, towers, selectedCard, onCanva
   return (
     <canvas
       ref={canvasRef}
-      width={600}
+      width={800}
       height={800}
       style={{
         display: 'block',
@@ -106,7 +108,12 @@ function renderArena(ctx, canvas, time, gameState, towers) {
     renderUnits(ctx, gameState.enemyTroops || [])
   }
 
-  // 7. Debug overlay (optional)
+  // 7. Projectiles (arrows)
+  if (gameState && gameState.projectiles) {
+    renderProjectiles(ctx, gameState.projectiles)
+  }
+
+  // 8. Debug overlay (optional)
   renderDebugOverlay(ctx, canvas, gameState)
 }
 
@@ -157,19 +164,19 @@ function renderGridPattern(ctx, canvas) {
  * Render lane boundaries
  */
 function renderLanes(ctx, canvas) {
-  // Left lane
+  // Left lane boundary (267px)
   ctx.strokeStyle = 'rgba(100, 150, 180, 0.15)'
   ctx.lineWidth = 3
   ctx.setLineDash([10, 10])
   ctx.beginPath()
-  ctx.moveTo(200, 0)
-  ctx.lineTo(200, canvas.height)
+  ctx.moveTo(267, 0)
+  ctx.lineTo(267, canvas.height)
   ctx.stroke()
 
-  // Right lane
+  // Right lane boundary (533px)
   ctx.beginPath()
-  ctx.moveTo(400, 0)
-  ctx.lineTo(400, canvas.height)
+  ctx.moveTo(533, 0)
+  ctx.lineTo(533, canvas.height)
   ctx.stroke()
 
   ctx.setLineDash([])
@@ -178,12 +185,12 @@ function renderLanes(ctx, canvas) {
   ctx.fillStyle = 'rgba(100, 150, 180, 0.2)'
   ctx.font = '12px Arial'
   ctx.textAlign = 'center'
-  ctx.fillText('LEFT', 100, 30)
-  ctx.fillText('CENTER', 300, 30)
-  ctx.fillText('RIGHT', 500, 30)
-  ctx.fillText('LEFT', 100, canvas.height - 10)
-  ctx.fillText('CENTER', 300, canvas.height - 10)
-  ctx.fillText('RIGHT', 500, canvas.height - 10)
+  ctx.fillText('LEFT', 133, 30)
+  ctx.fillText('CENTER', 400, 30)
+  ctx.fillText('RIGHT', 667, 30)
+  ctx.fillText('LEFT', 133, canvas.height - 10)
+  ctx.fillText('CENTER', 400, canvas.height - 10)
+  ctx.fillText('RIGHT', 667, canvas.height - 10)
 }
 
 /**

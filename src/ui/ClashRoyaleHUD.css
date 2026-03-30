@@ -1,49 +1,46 @@
 /**
  * ClashRoyaleHUD.css
- * Professional Clash Royale UI System
- * Dark Fantasy Theme with Authentic Clash Royale Aesthetics
+ * ============================================================================
+ * Professional Clash Royale HUD - Tower Health, Timer, Elixir
+ * 
+ * This CSS file implements the heads-up display with dark fantasy theming.
+ * Imports unified design tokens from theme.css for consistency.
+ * 
+ * Components:
+ * - Top HUD: Enemy & player tower health displays
+ * - Center: Game timer with pulsing animation
+ * - Bottom HUD: Elixir regeneration system
+ * ============================================================================
  */
 
+/* Import unified theme system */
+@import './theme.css';
+
 /* ============================================================================
-   DESIGN TOKENS & VARIABLES
+   LOCAL COLOR ALIASES - Maps theme tokens to HUD-specific names
    ============================================================================ */
 :root {
-  /* PRIMARY COLORS - Dark Fantasy Theme */
-  --cr-dark-bg: #0a0e27;
-  --cr-darker-bg: #1a0a2e;
-  --cr-darkest-bg: #0f0420;
-  --cr-panel-bg: rgba(31, 41, 55, 0.95);
+  /* Local aliases for backward compatibility */
+  --cr-dark-bg: var(--color-bg-darkest);
+  --cr-darker-bg: var(--color-bg-darker);
+  --cr-darkest-bg: var(--color-bg-dark);
+  --cr-panel-bg: var(--color-bg-panel);
   
-  /* ACCENT COLORS */
-  --cr-primary-purple: #9333ea;
-  --cr-bright-purple: #a855f7;
-  --cr-gold: #fbbf24;
-  --cr-green: #10b981;
-  --cr-red: #ef4444;
-  --cr-yellow: #f59e0b;
-  --cr-blue: #3b82f6;
+  --cr-primary-purple: var(--color-primary);
+  --cr-bright-purple: var(--color-primary-bright);
+  --cr-gold: var(--color-accent-gold);
+  --cr-green: var(--color-accent-green);
+  --cr-red: var(--color-accent-red);
+  --cr-yellow: var(--color-accent-yellow);
+  --cr-blue: var(--color-accent-blue);
   
-  /* RARITY COLORS */
-  --rarity-common: linear-gradient(135deg, #6B4423 0%, #C9A961 100%);
-  --rarity-rare: linear-gradient(135deg, #1E5F9E 0%, #4A9FD8 100%);
-  --rarity-epic: linear-gradient(135deg, #6B2D7F 0%, #A855F7 100%);
-  --rarity-legendary: linear-gradient(135deg, #B8860B 0%, #FF8C00 100%);
+  --rarity-common: var(--gradient-rarity-common);
+  --rarity-rare: var(--gradient-rarity-rare);
+  --rarity-epic: var(--gradient-rarity-epic);
+  --rarity-legendary: var(--gradient-rarity-legendary);
   
-  /* TYPOGRAPHY */
-  --font-display: 'Clash Royale', 'Arial Black', sans-serif;
-  --font-body: 'Arial', sans-serif;
-  
-  /* SPACING & SIZING */
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  
-  /* ANIMATIONS */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --font-display: var(--font-family-display);
+  --font-body: var(--font-family-body);
 }
 
 /* ============================================================================
@@ -70,9 +67,10 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: var(--space-6);
-  background: linear-gradient(180deg, rgba(10, 14, 39, 0.9) 0%, rgba(10, 14, 39, 0.4) 100%);
-  border-bottom: 2px solid rgba(147, 51, 234, 0.3);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(180deg, rgba(10, 14, 39, 0.95) 0%, rgba(10, 14, 39, 0.5) 100%);
+  border-bottom: 3px solid var(--color-border-highlight);
+  backdrop-filter: blur(var(--backdrop-blur-strong));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
   pointer-events: auto;
   gap: var(--space-8);
 }
@@ -109,18 +107,20 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  background: rgba(0, 0, 0, 0.4);
-  padding: var(--space-3);
-  border-radius: 8px;
-  border: 2px solid rgba(147, 51, 234, 0.3);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.5) 0%, rgba(31, 41, 55, 0.3) 100%);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--color-border);
   backdrop-filter: blur(4px);
-  transition: all var(--transition-fast);
+  transition: all var(--transition-smooth);
   min-width: 120px;
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .cr-hp-tower:hover {
-  border-color: rgba(147, 51, 234, 0.6);
-  box-shadow: 0 0 20px rgba(147, 51, 234, 0.2);
+  border-color: var(--color-border-highlight);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-purple), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
 /* King Towers - Larger */
@@ -188,14 +188,14 @@
 
 /* RED HP BAR - Enemy */
 .cr-hp-bar-red {
-  background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #dc2626 100%);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* GREEN HP BAR - Player */
 .cr-hp-bar-green {
-  background: linear-gradient(90deg, #059669 0%, #10b981 100%);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: linear-gradient(90deg, #059669 0%, #10b981 50%, #059669 100%);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* HP TEXT */
@@ -233,27 +233,31 @@
   font-family: var(--font-display);
   font-size: 3rem;
   font-weight: 900;
-  color: #fbbf24;
+  color: var(--color-accent-gold);
   text-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.8),
-    0 0 20px rgba(251, 191, 36, 0.4);
-  letter-spacing: 2px;
+    0 4px 12px rgba(0, 0, 0, 0.9),
+    0 0 30px rgba(251, 191, 36, 0.6),
+    0 0 60px rgba(251, 191, 36, 0.3);
+  letter-spacing: 3px;
   animation: timer-pulse 1s ease-in-out infinite;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 @keyframes timer-pulse {
   0%, 100% {
     transform: scale(1);
     text-shadow: 
-      0 4px 8px rgba(0, 0, 0, 0.8),
-      0 0 20px rgba(251, 191, 36, 0.4);
+      0 4px 12px rgba(0, 0, 0, 0.9),
+      0 0 30px rgba(251, 191, 36, 0.6),
+      0 0 60px rgba(251, 191, 36, 0.2);
   }
   50% {
-    transform: scale(1.05);
+    transform: scale(1.08);
     text-shadow: 
-      0 4px 8px rgba(0, 0, 0, 0.8),
-      0 0 30px rgba(251, 191, 36, 0.6);
+      0 4px 12px rgba(0, 0, 0, 0.9),
+      0 0 40px rgba(251, 191, 36, 0.8),
+      0 0 80px rgba(251, 191, 36, 0.4);
   }
 }
 
@@ -265,9 +269,10 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--space-6);
-  background: linear-gradient(180deg, rgba(10, 14, 39, 0.4) 0%, rgba(10, 14, 39, 0.9) 100%);
-  border-top: 2px solid rgba(147, 51, 234, 0.3);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(180deg, rgba(10, 14, 39, 0.5) 0%, rgba(10, 14, 39, 0.95) 100%);
+  border-top: 3px solid var(--color-border-highlight);
+  backdrop-filter: blur(var(--backdrop-blur-strong));
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
   pointer-events: auto;
   gap: var(--space-8);
 }
@@ -283,9 +288,11 @@
 
 .cr-elixir-bar-wrapper {
   position: relative;
-  width: 280px;
+  width: 320px;
   display: flex;
   align-items: center;
+  /* Updated from 280px to 320px to accommodate 800px game screen width */
+  /* Scales proportionally: (280 / 600) * 800 = 373, but constrained to 320 for balance */
 }
 
 /* ELIXIR BAR BACKGROUND */
@@ -717,7 +724,9 @@
   }
 
   .cr-elixir-bar-wrapper {
-    width: 220px;
+    width: 260px;
+    /* Updated from 220px for 800px game screen width */
+    /* Maintains proportional scaling: (220 / 600) * 800 = 293, constrained to 260 */
   }
 
   .cr-result-container {
@@ -827,3 +836,6 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+

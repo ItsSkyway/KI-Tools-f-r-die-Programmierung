@@ -7,14 +7,14 @@
 // ARENA & RENDERING - CLASH ROYALE ACCURATE
 // ============================================================================
 
-export const GAME_WIDTH = 600
+export const GAME_WIDTH = 800
 export const GAME_HEIGHT = 800
-export const ARENA_WIDTH = 600
+export const ARENA_WIDTH = 800
 export const ARENA_HEIGHT = 800
 
 // River divides the arena at y=400
 export const RIVER_Y = 400
-export const RIVER_WIDTH = 200 // Center lane (x: 200-400)
+export const RIVER_WIDTH = 200 // Center lane (x: 300-500)
 
 // Territories
 export const ENEMY_TERRITORY_START = 0
@@ -26,23 +26,23 @@ export const PLAYER_TERRITORY_END = 800
 export const LANES = {
   left: {
     id: 'left',
-    x: 100, // Center of left lane (x: 0-200)
+    x: 133, // Center of left lane (x: 0-267)
     minX: 0,
-    maxX: 200,
+    maxX: 267,
     color: '#2a5f7f',
   },
   center: {
     id: 'center',
-    x: 300, // Center of center lane (x: 200-400)
-    minX: 200,
-    maxX: 400,
+    x: 400, // Center of center lane (x: 267-533)
+    minX: 267,
+    maxX: 533,
     color: '#3a6f8f',
   },
   right: {
     id: 'right',
-    x: 500, // Center of right lane (x: 400-600)
-    minX: 400,
-    maxX: 600,
+    x: 667, // Center of right lane (x: 533-800)
+    minX: 533,
+    maxX: 800,
     color: '#2a5f7f',
   },
 }
@@ -56,7 +56,7 @@ export const BRIDGES = {
     height: 40,
   },
   right: {
-    x: 450, // Right bridge crossing point
+    x: 470, // Right bridge crossing point (adjusted for 800px width)
     y: RIVER_Y,
     width: 80,
     height: 40,
@@ -96,19 +96,19 @@ export const ELIXIR_REGENERATION_RATE_DOUBLE = 2 // per second during double eli
 export const TOWER_POSITIONS = {
   player: {
     kingTower: {
-      x: LANES.center.x, // 300 - Center lane
+      x: LANES.center.x, // 400 - Center lane
       y: ARENA_HEIGHT - 60,
       isKing: true,
       lane: 'center',
     },
     princessLeft: {
-      x: LANES.left.x, // 100 - Left lane
+      x: LANES.left.x, // 133 - Left lane
       y: ARENA_HEIGHT - 120,
       isKing: false,
       lane: 'left',
     },
     princessRight: {
-      x: LANES.right.x, // 500 - Right lane
+      x: LANES.right.x, // 667 - Right lane
       y: ARENA_HEIGHT - 120,
       isKing: false,
       lane: 'right',
@@ -116,19 +116,19 @@ export const TOWER_POSITIONS = {
   },
   enemy: {
     kingTower: {
-      x: LANES.center.x, // 300 - Center lane
+      x: LANES.center.x, // 400 - Center lane
       y: 60,
       isKing: true,
       lane: 'center',
     },
     princessLeft: {
-      x: LANES.left.x, // 100 - Left lane
+      x: LANES.left.x, // 133 - Left lane
       y: 120,
       isKing: false,
       lane: 'left',
     },
     princessRight: {
-      x: LANES.right.x, // 500 - Right lane
+      x: LANES.right.x, // 667 - Right lane
       y: 120,
       isKing: false,
       lane: 'right',

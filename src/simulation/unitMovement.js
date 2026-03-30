@@ -1,13 +1,100 @@
 /**
  * Unit Movement System
  * Pathfinding, lane-based movement, and smooth lerp animations
+ * Includes bridge-aware pathfinding and drowning mechanics
  */
 
 import { LANES, LANE_WIDTH, ARENA_HEIGHT, RIVER_Y, BRIDGES, ARENA_WIDTH } from '../game/constants.js'
+import {
+  calculatePathWithBridges,
+  moveUnitAlongPath,
+  isDrowning,
+  checkAndApplyDrowningDamage,
+  getDrowningVisualEffect,
+  shouldRecalculatePath,
+  getBridgeCrossingStatus,
+} from './pathfinding.js'
+import { isInRiverZone, isBridgeCrossing } from '../game/arena.js'
+
 
 // ============================================================================
-// CORE MOVEMENT
+// BRIDGE-AWARE PATHFINDING INTEGRATION
 // ============================================================================
+
+/**
+ * Calculate unit movement with bridge-aware pathfinding
+ * @param {Unit} unit - Unit to move
+ * @param {number} targetX - Target X position
+ * @param {number} targetY - Target Y position
+ * @param {string} laneId - Unit's lane preference
+ * @returns {Object} {x, y, path, isDrowning}
+ */
+export const calculateBridgeAwarePath = (unit, targetX, targetY, laneId = 'center') => {
+  return calculatePathWithBridges(unit.x, unit.y, targetX, targetY, laneId)
+}
+
+/**
+ * Update unit movement with pathfinding and drowning detection
+ * @param {Unit} unit - Unit to update
+ * @param {number} targetX - Target X
+ * @param {number} targetY - Target Y
+ * @param {number} speed - Movement speed multiplier
+ * @returns {Unit} Updated unit
+ */
+export const updateUnitWithPathfinding = (unit, targetX, targetY, speed = 1) => {
+  if (!unit) return unit
+
+  // Recalculate path if needed
+  if (shouldRecalculatePath(unit, { x: targetX, y: targetY })) {
+    unit.currentPath = calculatePathWithBridges(
+      unit.x,
+      unit.y,
+      targetX,
+      targetY,
+      unit.lane || 'center'
+    )
+    unit.pathComplete = false
+  }
+
+  // Move along path
+  if (unit.currentPath && unit.currentPath.length > 0) {
+    const result = moveUnitAlongPath(unit, unit.currentPath, speed)
+    unit.x = result.unit.x
+    unit.y = result.unit.y
+    unit.pathComplete = result.reachedEnd
+  }
+
+  // Check and apply drowning damage
+  unit = checkAndApplyDrowningDamage(unit, speed)
+
+  // Get visual effects if drowning
+  if (unit.isDrowning) {
+    unit.drowningEffects = getDrowningVisualEffect(unit)
+  }
+
+  return unit
+}
+
+/**
+ * Get drowning status for a unit
+ * @param {Unit} unit - Unit to check
+ * @returns {Object} Drowning information
+ */
+export const getDrowningStatus = (unit) => {
+  const drowning = isDrowning(unit)
+  const bridgeStatus = getBridgeCrossingStatus(unit)
+
+  return {
+    isDrowning: drowning,
+    isDead: unit.hp <= 0,
+    hpPercent: (unit.hp / unit.maxHp) * 100,
+    drowningDuration: unit.drowningDuration || 0,
+    bridgeStatus,
+    visualEffect: getDrowningVisualEffect(unit),
+  }
+}
+
+
 
 /**
  * Smooth lerp movement towards target

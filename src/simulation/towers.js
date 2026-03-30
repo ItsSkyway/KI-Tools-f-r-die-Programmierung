@@ -29,6 +29,10 @@ export const initializeTowers = owner => {
       isKing: true,
       target: null,
       destroyed: false,
+      // King tower activation state machine
+      state: 'dormant', // 'dormant' or 'active'
+      activatedAt: null, // Timestamp when activated
+      wasKingDamaged: false, // Track if king has been damaged
     },
     princessLeft: {
       id: `tower_princess_left_${owner}`,
@@ -103,6 +107,11 @@ export const damageTower = (tower, damage) => {
   if (tower.hp === 0) {
     tower.destroyed = true
   }
+  
+  // Track if this is a king tower taking damage
+  if (tower.isKing) {
+    trackKingTowerDamage(tower)
+  }
 }
 
 /**
@@ -153,5 +162,121 @@ export const getTowerHealthStatus = towers => {
       maxHp: towers.princessRight.maxHp,
       percent: getTowerHealthPercent(towers.princessRight),
     },
+  }
+}
+
+/**
+ * KING TOWER ACTIVATION STATE MACHINE
+ * =====================================
+ * 
+ * Transition: DORMANT → ACTIVE
+ * 
+ * Triggers:
+ * 1. One of the princess towers is destroyed
+ * 2. King tower takes damage
+ * 
+ * Once ACTIVE: King tower shoots normally (no restrictions)
+ */
+
+/**
+ * Count living princess towers
+ * @param {Object} towers - { kingTower, princessLeft, princessRight }
+ * @returns {number} Number of princess towers still alive (0-2)
+ */
+export const getPrincessTowerCount = towers => {
+  let count = 0
+  if (isTowerAlive(towers.princessLeft)) count++
+  if (isTowerAlive(towers.princessRight)) count++
+  return count
+}
+
+/**
+ * Check if king tower should be activated
+ * 
+ * Activation conditions:
+ * - Any princess tower was destroyed, OR
+ * - King tower has taken damage
+ * 
+ * @param {Tower} kingTower - King tower object
+ * @param {number} princessTowerCount - Current count of living princess towers
+ * @param {number} previousPrincessCount - Previous frame's princess tower count
+ * @returns {boolean} true if activation should occur
+ */
+export const shouldActivateKingTower = (kingTower, princessTowerCount, previousPrincessCount) => {
+  // Already active
+  if (kingTower.state === 'active') {
+    return false
+  }
+
+  // Condition 1: Princess tower was destroyed
+  if (princessTowerCount < previousPrincessCount) {
+    return true
+  }
+
+  // Condition 2: King tower has taken damage
+  if (kingTower.wasKingDamaged) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Activate king tower
+ * Transitions from DORMANT to ACTIVE state
+ * 
+ * @param {Tower} kingTower - King tower to activate
+ * @returns {Object} Activation event data for UI/animation
+ */
+export const activateKingTower = kingTower => {
+  if (kingTower.state === 'active') {
+    return { activated: false, tower: kingTower }
+  }
+
+  const previousState = kingTower.state
+  kingTower.state = 'active'
+  kingTower.activatedAt = Date.now()
+  kingTower.wasKingDamaged = false // Reset flag after activation
+
+  return {
+    activated: true,
+    tower: kingTower,
+    previousState,
+    activatedAt: kingTower.activatedAt,
+    message: 'King Tower Activated!',
+  }
+}
+
+/**
+ * Track king tower damage for activation
+ * Call this when king tower takes damage
+ * 
+ * @param {Tower} kingTower - King tower
+ * @returns {void}
+ */
+export const trackKingTowerDamage = kingTower => {
+  if (kingTower.state === 'dormant') {
+    kingTower.wasKingDamaged = true
+  }
+}
+
+/**
+ * Get king tower state information
+ * Useful for UI display and debugging
+ * 
+ * @param {Tower} kingTower - King tower
+ * @returns {Object} State information
+ */
+export const getKingTowerState = kingTower => {
+  return {
+    state: kingTower.state,
+    isDormant: kingTower.state === 'dormant',
+    isActive: kingTower.state === 'active',
+    canShoot: kingTower.state === 'active',
+    hp: kingTower.hp,
+    maxHp: kingTower.maxHp,
+    healthPercent: getTowerHealthPercent(kingTower),
+    activatedAt: kingTower.activatedAt,
+    wasKingDamaged: kingTower.wasKingDamaged,
   }
 }

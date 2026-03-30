@@ -210,15 +210,15 @@ export const performAttack = (attacker, target, allEnemyUnits = []) => {
 }
 
 /**
- * Tower attacks target
+ * Tower attacks target - Returns projectile data instead of instant damage
  * @param {Tower} tower
  * @param {Unit} target
  * @param {Unit[]} allEnemyUnits - For splash damage
- * @returns {Object} Damage dealt
+ * @returns {Object} Attack result with projectile data
  */
 export const towerAttack = (tower, target, allEnemyUnits = []) => {
   if (!target || target.hp <= 0) {
-    return { damage: 0, hitTargets: [] }
+    return { damage: 0, hitTargets: [], arrow: null }
   }
 
   const now = Date.now()
@@ -226,31 +226,49 @@ export const towerAttack = (tower, target, allEnemyUnits = []) => {
   const attackInterval = (1 / tower.attackSpeed) * 1000
 
   if (timeSinceLastAttack < attackInterval) {
-    return { damage: 0, hitTargets: [] }
+    return { damage: 0, hitTargets: [], arrow: null }
   }
 
   const damage = tower.damage
-  target.hp = Math.max(0, target.hp - damage)
   tower.lastAttackTime = now
 
+  // Calculate arrow travel time based on distance
+  const distance = Math.hypot(target.x - tower.x, target.y - tower.y)
+  const travelTime = Math.max(150, Math.min(500, (distance / 300) * 400)) // 150-500ms based on distance
+
   const hitTargets = [target]
+  const splashTargets = []
 
   // Handle tower splash if applicable
   if (tower.splashRadius && tower.splashRadius > 0 && allEnemyUnits.length > 0) {
-    const splashTargets = allEnemyUnits.filter(unit => {
-      if (unit.hp <= 0 || unit === target) return false
-      const distToCenter = Math.hypot(unit.x - target.x, unit.y - target.y)
-      return distToCenter <= tower.splashRadius
-    })
-
-    splashTargets.forEach(unit => {
-      const splashDamage = damage * 0.75
-      unit.hp = Math.max(0, unit.hp - splashDamage)
-      hitTargets.push(unit)
+    allEnemyUnits.forEach(unit => {
+      if (unit.hp > 0 && unit !== target) {
+        const distToCenter = Math.hypot(unit.x - target.x, unit.y - target.y)
+        if (distToCenter <= tower.splashRadius) {
+          hitTargets.push(unit)
+          splashTargets.push(unit)
+        }
+      }
     })
   }
 
-  return { damage, hitTargets }
+  // Return projectile data for game loop to create arrow
+  return {
+    damage,
+    hitTargets,
+    arrow: {
+      fromX: tower.x,
+      fromY: tower.y,
+      toX: target.x,
+      toY: target.y,
+      damage: tower.damage,
+      travelTime,
+      owner: tower.ownerType, // 'player' or 'enemy'
+      target,
+      splashRadius: tower.splashRadius || 0,
+      affectedUnits: splashTargets, // For splash damage application
+    }
+  }
 }
 
 /**

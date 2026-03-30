@@ -6,6 +6,18 @@
 import { findNearestEnemy, performAttack, towerAttack, removeDeadUnits, determineWinner } from '../simulation/combat.js'
 import { updateUnitMovement, separateUnits } from '../simulation/unitMovement.js'
 import { applySpellEffect, applyUnitAbility } from '../cards/cardEffects.js'
+import { 
+  getPrincessTowerCount, 
+  shouldActivateKingTower, 
+  activateKingTower 
+} from '../simulation/towers.js'
+import {
+  createArrow,
+  updateProjectiles,
+  filterCompletedArrows,
+  processArrowCollisions,
+  applyArrowDamage,
+} from '../simulation/projectiles.js'
 
 /**
  * Distance helper for spell targeting
@@ -25,6 +37,7 @@ export const runGameFrame = (gameState, towers, deltaMs = 33) => {
     towersUpdated: false,
     gameOver: false,
     winner: null,
+    kingTowerActivations: [], // Track activation events for UI
   }
 
   // Update game time
@@ -43,6 +56,41 @@ export const runGameFrame = (gameState, towers, deltaMs = 33) => {
 
     return updates
   }
+
+  // ============================================================================
+  // KING TOWER ACTIVATION STATE MACHINE CHECK
+  // ============================================================================
+  // Check if either king tower should activate (dormant → active)
+  
+  // Initialize tracking if needed
+  if (!gameState.playerPrincessCount) {
+    gameState.playerPrincessCount = getPrincessTowerCount(towers.player)
+  }
+  if (!gameState.enemyPrincessCount) {
+    gameState.enemyPrincessCount = getPrincessTowerCount(towers.enemy)
+  }
+
+  // Check player king tower activation
+  const currentPlayerPrincessCount = getPrincessTowerCount(towers.player)
+  if (shouldActivateKingTower(towers.player.kingTower, currentPlayerPrincessCount, gameState.playerPrincessCount)) {
+    const activationEvent = activateKingTower(towers.player.kingTower)
+    updates.kingTowerActivations.push({
+      owner: 'player',
+      ...activationEvent,
+    })
+  }
+  gameState.playerPrincessCount = currentPlayerPrincessCount
+
+  // Check enemy king tower activation
+  const currentEnemyPrincessCount = getPrincessTowerCount(towers.enemy)
+  if (shouldActivateKingTower(towers.enemy.kingTower, currentEnemyPrincessCount, gameState.enemyPrincessCount)) {
+    const activationEvent = activateKingTower(towers.enemy.kingTower)
+    updates.kingTowerActivations.push({
+      owner: 'enemy',
+      ...activationEvent,
+    })
+  }
+  gameState.enemyPrincessCount = currentEnemyPrincessCount
 
   // Check double elixir (last 60 seconds)
   const isDoubleElixir = gameState.gameTime < 60000
@@ -87,15 +135,88 @@ export const runGameFrame = (gameState, towers, deltaMs = 33) => {
     return true
   })
 
-  // Process towers
-  processTowers(towers.player, gameState.playerTroops, gameState.playerBuildings)
-  processTowers(towers.enemy, gameState.enemyTroops, gameState.enemyBuildings)
+  // PHASE 1B: Process tower arrows
+  const playerArrows = processTowers(towers.player, gameState.enemyTroops, gameState.enemyBuildings)
+  const enemyArrows = processTowers(towers.enemy, gameState.playerTroops, gameState.playerBuildings)
+  
+  // Create arrow projectiles
+  playerArrows.forEach(arrowData => {
+    const arrow = createArrow(
+      arrowData.fromX,
+      arrowData.fromY,
+      arrowData.toX,
+      arrowData.toY,
+      arrowData.damage,
+      arrowData.travelTime,
+      arrowData.owner,
+      arrowData.target
+    )
+    gameState.projectiles.push(arrow)
+  })
+  
+  enemyArrows.forEach(arrowData => {
+    const arrow = createArrow(
+      arrowData.fromX,
+      arrowData.fromY,
+      arrowData.toX,
+      arrowData.toY,
+      arrowData.damage,
+      arrowData.travelTime,
+      arrowData.owner,
+      arrowData.target
+    )
+    gameState.projectiles.push(arrow)
+  })
 
   // Clean up dead units
   gameState.playerTroops = removeDeadUnits(gameState.playerTroops)
   gameState.enemyTroops = removeDeadUnits(gameState.enemyTroops)
   gameState.playerBuildings = removeDeadUnits(gameState.playerBuildings)
   gameState.enemyBuildings = removeDeadUnits(gameState.enemyBuildings)
+
+  // PHASE 3: Update and process arrow projectiles
+  if (!gameState.projectiles) {
+    gameState.projectiles = []
+  }
+  
+  // Update arrow positions
+  gameState.projectiles = updateProjectiles(gameState.projectiles, deltaMs)
+  
+  // Process arrow collisions with enemy units
+  const [playerArrowsHit, playerDamageEvents] = processArrowCollisions(
+    gameState.projectiles.filter(a => a.owner === 'player'),
+    gameState.enemyTroops,
+    15
+  )
+  
+  const [enemyArrowsHit, enemyDamageEvents] = processArrowCollisions(
+    gameState.projectiles.filter(a => a.owner === 'enemy'),
+    gameState.playerTroops,
+    15
+  )
+  
+  // Apply damage from arrow hits
+  applyArrowDamage([...playerDamageEvents, ...enemyDamageEvents])
+  
+  // Also check collisions with towers
+  gameState.projectiles.forEach(arrow => {
+    if (arrow.hasHit) return
+    
+    const towerSet = arrow.owner === 'player' ? towers.enemy : towers.player
+    Object.values(towerSet).forEach(tower => {
+      if (tower.hp > 0) {
+        const dist = Math.hypot(tower.x - arrow.x, tower.y - arrow.y)
+        if (dist < 20) {
+          arrow.hasHit = true
+          arrow.hitAt = arrow.elapsed
+          tower.hp = Math.max(0, tower.hp - arrow.damage)
+        }
+      }
+    })
+  })
+  
+  // Filter out completed arrows
+  gameState.projectiles = filterCompletedArrows(gameState.projectiles)
 
   // PHASE 4: Prevent unit overlap - collision separation
   for (let i = 0; i < gameState.playerTroops.length; i++) {
@@ -190,10 +311,22 @@ const processUnits = (friendlyUnits, friendlyBuildings, enemies, enemyTowers, ga
 /**
  * Process tower attacks
  * Towers find targets using intelligent prioritization
+ * Returns array of arrow creation requests
+ * 
+ * KING TOWER ACTIVATION:
+ * - Dormant king towers cannot shoot (only defend when damaged)
+ * - Active king towers shoot normally
  */
 const processTowers = (towerSet, enemyTroops, enemyBuildings) => {
+  const arrows = []
+  
   Object.values(towerSet).forEach(tower => {
     if (tower.hp <= 0) return
+
+    // King tower activation check: skip dormant king towers
+    if (tower.isKing && tower.state === 'dormant') {
+      return // Dormant king tower cannot attack
+    }
 
     // Towers behave like units: find best target
     let target = findNearestEnemy(
@@ -208,9 +341,16 @@ const processTowers = (towerSet, enemyTroops, enemyBuildings) => {
     if (target) {
       // Towers can also have splash damage
       const allEnemyUnits = [...enemyTroops, ...(enemyBuildings || [])]
-      towerAttack(tower, target, allEnemyUnits)
+      const attackResult = towerAttack(tower, target, allEnemyUnits)
+      
+      // Create arrow projectile if attack successful
+      if (attackResult.arrow) {
+        arrows.push(attackResult.arrow)
+      }
     }
   })
+  
+  return arrows
 }
 
 /**
@@ -257,11 +397,27 @@ export const createUIUpdate = (gameState, towers) => {
       type: key,
       hp: tower.hp,
       maxHp: tower.maxHp,
+      state: tower.state || 'active', // Include king tower state
+      canShoot: !tower.isKing || tower.state === 'active', // King towers only shoot when active
     })),
     enemyTowerHp: Object.entries(towers.enemy).map(([key, tower]) => ({
       type: key,
       hp: tower.hp,
       maxHp: tower.maxHp,
+      state: tower.state || 'active',
+      canShoot: !tower.isKing || tower.state === 'active',
     })),
+    kingTowerStates: {
+      player: {
+        state: towers.player.kingTower.state,
+        isDormant: towers.player.kingTower.state === 'dormant',
+        isActive: towers.player.kingTower.state === 'active',
+      },
+      enemy: {
+        state: towers.enemy.kingTower.state,
+        isDormant: towers.enemy.kingTower.state === 'dormant',
+        isActive: towers.enemy.kingTower.state === 'active',
+      },
+    },
   }
 }
