@@ -69,22 +69,65 @@
     .rarity-epic { background: linear-gradient(135deg, #6B2D7F 0%, #A855F7 100%); border-color: #D4AAFF; color: #FFF; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
     .rarity-legendary { background: linear-gradient(135deg, #B8860B 0%, #FF8C00 100%); border-color: #FFB84D; color: #000; text-shadow: 1px 1px 2px rgba(255,255,255,0.4); box-shadow: 0 0 30px rgba(255, 165, 0, 0.9), inset 0 0 20px rgba(255, 215, 0, 0.3); }
     
-    /* 4-Card Hand Container */
+    /* Clash Royale Hand Container */
     .hand-container {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 10px 12px 12px;
+      background: linear-gradient(180deg, #3d2910 0%, #2a1a08 40%, #1f1206 100%);
+      border-top: 3px solid #8B6914;
+      position: relative;
+    }
+
+    /* Next card preview (small, on the left) */
+    .next-card-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      min-height: 72px;
+      border: 2px solid rgba(255,215,0,0.5);
+      border-radius: 8px;
+      background: rgba(0,0,0,0.4);
+      margin-right: 10px;
+      opacity: 0.85;
+      flex-shrink: 0;
+      position: relative;
+      cursor: default;
+    }
+
+    .next-card-preview::before {
+      content: 'NEXT';
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      font-weight: 800;
+      color: rgba(255,215,0,0.8);
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .next-card-preview .hand-card-emoji {
+      font-size: 22px;
+      margin-bottom: 2px;
+    }
+
+    .next-card-preview .hand-card-cost {
+      font-size: 11px;
+    }
+
+    /* Main 4-card hand slots */
+    .hand-cards-row {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      padding: 16px;
-      background: linear-gradient(180deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.98) 100%);
-      border-top: 3px solid rgba(147, 51, 234, 0.6);
-      border-left: 2px solid #1f2937;
-      border-right: 2px solid #1f2937;
-      border-bottom: 2px solid #1f2937;
-      border-radius: 12px 12px 0 0;
-      backdrop-filter: blur(10px);
-      min-height: 140px;
+      gap: 8px;
+      flex: 1;
     }
-    
+
     /* Hand Card Styles */
     .hand-card {
       position: relative;
@@ -92,7 +135,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 12px;
+      padding: 10px 8px;
       border: 2px solid;
       border-radius: 10px;
       cursor: pointer;
@@ -100,7 +143,7 @@
       background: linear-gradient(135deg, rgba(55, 65, 81, 0.9) 0%, rgba(31, 41, 55, 0.95) 100%);
       user-select: none;
       overflow: visible;
-      min-height: 100px;
+      min-height: 95px;
     }
     
     .hand-card:hover:not(.cannot-play) {
@@ -305,14 +348,19 @@
     /* Responsive Design */
     @media (max-width: 768px) {
       .hand-container {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
-        padding: 12px;
-        min-height: 120px;
+        padding: 8px 10px 10px;
+        gap: 0;
       }
+      .next-card-preview {
+        width: 44px;
+        min-height: 62px;
+        margin-right: 8px;
+      }
+      .next-card-preview .hand-card-emoji { font-size: 18px; }
+      .hand-cards-row { gap: 6px; }
       .hand-card {
         padding: 8px;
-        min-height: 90px;
+        min-height: 85px;
       }
       .hand-card-emoji { font-size: 24px; }
       .hand-card-name { font-size: 10px; }
@@ -322,14 +370,19 @@
     
     @media (max-width: 480px) {
       .hand-container {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
-        padding: 8px;
-        min-height: 100px;
+        padding: 6px 8px 8px;
+        gap: 0;
       }
+      .next-card-preview {
+        width: 38px;
+        min-height: 56px;
+        margin-right: 6px;
+      }
+      .next-card-preview .hand-card-emoji { font-size: 16px; }
+      .hand-cards-row { gap: 4px; }
       .hand-card {
         padding: 6px;
-        min-height: 80px;
+        min-height: 75px;
       }
       .hand-card-emoji { font-size: 20px; }
       .hand-card-name { font-size: 9px; }
@@ -779,7 +832,14 @@ function ClashRoyaleGame() {
 
     const hand = isPlayer ? gs.playerHand : gs.enemyHand
     const handIdx = hand.findIndex(h => h.cardId === cardId)
-    if (handIdx >= 0) hand.splice(handIdx, 1)
+    if (isPlayer && handIdx >= 0 && gs.playerDeck) {
+      // Replace slot with next card from deck (Clash Royale cycling)
+      const nextIdx = gs.playerNextDeckIdx % gs.playerDeck.length
+      hand[handIdx] = { cardId: gs.playerDeck[nextIdx], id: Math.random() }
+      gs.playerNextDeckIdx++
+    } else if (!isPlayer && handIdx >= 0) {
+      hand.splice(handIdx, 1)
+    }
 
     if (card.type === 'spell') {
       const side = isPlayer ? 'enemy' : 'player'
@@ -884,7 +944,11 @@ function ClashRoyaleGame() {
     gs.playerBuildings = []
     gs.enemyTroops = []
     gs.enemyBuildings = []
-    gs.playerHand = selectedDeck.map(cardId => ({ cardId, id: Math.random() }))
+    // Store full 8-card deck for cycling (Clash Royale style)
+    gs.playerDeck = [...selectedDeck] // array of 8 cardId strings
+    gs.playerNextDeckIdx = 4 // next card to deal (after initial 4)
+    // Hand shows exactly 4 cards (deck indices 0-3)
+    gs.playerHand = selectedDeck.slice(0, 4).map(cardId => ({ cardId, id: Math.random() }))
     gs.enemyHand = CARD_ARRAY.slice(0, 8).map(card => ({ cardId: card.id, id: Math.random() }))
     gs.lastCardPlayTime = { player: 0, enemy: 0 }
     gs.freezeZones = []
@@ -1466,72 +1530,87 @@ function ClashRoyaleGame() {
           </div>
         </div>
 
-        {/* 4-Card Hand Container */}
+        {/* Clash Royale Hand Container */}
         <div className="hand-container">
-          {gs.playerHand.map((handItem, idx) => {
-            if (!handItem || !handItem.cardId || !CARDS[handItem.cardId]) return null
-            const card = CARDS[handItem.cardId]
-            const canPlay = gameStats.playerElixir >= card.elixirCost && !gs.gameOver
-            const isDragging = dragState.dragging === handItem.id
-            const isCycleNext = cycledCard === idx
-            
+          {/* Next card preview - left side, small */}
+          {gs.playerDeck && gs.playerDeck.length > 0 && (() => {
+            const nextIdx = (gs.playerNextDeckIdx ?? gs.playerHand.length) % gs.playerDeck.length
+            const nextCard = CARDS[gs.playerDeck[nextIdx]]
+            if (!nextCard) return null
             return (
-              <div
-                key={handItem.id}
-                draggable={canPlay}
-                onDragStart={(e) => handleCardDragStart(e, handItem, card)}
-                onDragEnd={(e) => handleCardDragEnd(e)}
-                onMouseDown={(e) => {
-                  if (canPlay && e.button === 0) {
-                    handleCardMouseDown(e, handItem)
-                  }
-                }}
-                onClick={() => {
-                  if (canPlay) {
-                    // Activate placement mode instead of auto-playing
-                    setDragState({
-                      dragging: null,
-                      ghostPos: { x: 0, y: 0 },
-                      dropZoneValid: null,
-                      ghostCard: card,
-                      placementMode: handItem.id
-                    })
-                  }
-                }}
-                className={`hand-card ${canPlay ? 'can-play' : 'cannot-play'} ${isDragging ? 'dragging' : ''} rarity-${card.rarity}`}
-                style={{
-                  borderColor: isDragging ? 'rgba(147, 51, 234, 0.8)' : rarityBorderColors[card.rarity] || '#E8D5B7',
-                  cursor: canPlay ? 'grab' : 'not-allowed',
-                  opacity: isDragging ? 0.4 : 1,
-                  filter: isDragging ? 'grayscale(100%) brightness(0.7)' : 'brightness(1)',
-                  transform: isDragging ? 'scale(0.95)' : 'scale(1)',
-                  position: 'relative',
-                }}
-              >
-                <div className="hand-card-rarity" style={{
-                  borderColor: rarityBorderColors[card.rarity],
-                  backgroundColor: rarityColors[card.rarity],
-                  color: card.rarity === 'legendary' ? '#000' : '#fff',
-                  opacity: 0.95,
-                }}>
-                  {'⭐'}
-                </div>
-
-                <span className="hand-card-emoji">{card.emoji}</span>
-
-                <div className="hand-card-name">{card.name.length > 8 ? card.name.slice(0, 7) + '.' : card.name}</div>
-
+              <div className={`next-card-preview rarity-${nextCard.rarity}`}
+                title={`Next: ${nextCard.name} (${nextCard.elixirCost}⚡)`}
+                style={{ borderColor: rarityBorderColors[nextCard.rarity] || '#FFD700' }}>
+                <span className="hand-card-emoji">{nextCard.emoji}</span>
                 <div className="hand-card-cost">
-                  <span>{card.elixirCost}</span>
-                  <span style={{ fontSize: '10px' }}>⚡</span>
+                  <span>{nextCard.elixirCost}</span>
+                  <span style={{ fontSize: '9px' }}>⚡</span>
                 </div>
-
-                {isCycleNext && (
-                  <div className="cycle-indicator active" title="Next in deck cycle" />
-                )}
               </div>
             )
-          })}
+          })()}
+
+          {/* 4 main hand cards */}
+          <div className="hand-cards-row">
+            {gs.playerHand.slice(0, 4).map((handItem, idx) => {
+              if (!handItem || !handItem.cardId || !CARDS[handItem.cardId]) return null
+              const card = CARDS[handItem.cardId]
+              const canPlay = gameStats.playerElixir >= card.elixirCost && !gs.gameOver
+              const isDragging = dragState.dragging === handItem.id
+
+              return (
+                <div
+                  key={handItem.id}
+                  draggable={canPlay}
+                  onDragStart={(e) => handleCardDragStart(e, handItem, card)}
+                  onDragEnd={(e) => handleCardDragEnd(e)}
+                  onMouseDown={(e) => {
+                    if (canPlay && e.button === 0) {
+                      handleCardMouseDown(e, handItem)
+                    }
+                  }}
+                  onClick={() => {
+                    if (canPlay) {
+                      setDragState({
+                        dragging: null,
+                        ghostPos: { x: 0, y: 0 },
+                        dropZoneValid: null,
+                        ghostCard: card,
+                        placementMode: handItem.id
+                      })
+                    }
+                  }}
+                  className={`hand-card ${canPlay ? 'can-play' : 'cannot-play'} ${isDragging ? 'dragging' : ''} rarity-${card.rarity}`}
+                  style={{
+                    borderColor: isDragging ? 'rgba(147, 51, 234, 0.8)' : rarityBorderColors[card.rarity] || '#E8D5B7',
+                    cursor: canPlay ? 'grab' : 'not-allowed',
+                    opacity: isDragging ? 0.4 : 1,
+                    filter: isDragging ? 'grayscale(100%) brightness(0.7)' : 'brightness(1)',
+                    transform: isDragging ? 'scale(0.95)' : 'scale(1)',
+                    position: 'relative',
+                  }}
+                >
+                  <div className="hand-card-rarity" style={{
+                    borderColor: rarityBorderColors[card.rarity],
+                    backgroundColor: rarityColors[card.rarity],
+                    color: card.rarity === 'legendary' ? '#000' : '#fff',
+                    opacity: 0.95,
+                  }}>
+                    {'⭐'}
+                  </div>
+
+                  <span className="hand-card-emoji">{card.emoji}</span>
+
+                  <div className="hand-card-name">{card.name.length > 8 ? card.name.slice(0, 7) + '.' : card.name}</div>
+
+                  <div className="hand-card-cost">
+                    <span>{card.elixirCost}</span>
+                    <span style={{ fontSize: '10px' }}>⚡</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
         
         {/* Drag Ghost */}
