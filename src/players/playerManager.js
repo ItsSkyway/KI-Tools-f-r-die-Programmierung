@@ -1,11 +1,13 @@
 /**
  * Player Manager
  * Player state initialization and management
+ * 
+ * Now integrates with new deckCycling system for proper 8-card cycling
  */
 
 import { PLAYER_TYPES } from '../game/constants.js'
 import { initializeTowers } from '../simulation/towers.js'
-import { createInitialHand, getRandomDeck, getRecommendedDeck } from './deckBuilder.js'
+import { createDeckCyclingState, getRandomDeck, getRecommendedDeck } from './deckCycling.js'
 
 /**
  * Create a player state object
@@ -17,6 +19,9 @@ import { createInitialHand, getRandomDeck, getRecommendedDeck } from './deckBuil
 export const createPlayerState = (type, deck, options = {}) => {
   const defaultDeck = deck || getRandomDeck()
 
+  // Create deck cycling state (handles shuffle, hand init, etc.)
+  const deckCyclingState = createDeckCyclingState(defaultDeck)
+
   const playerState = {
     type,
     difficulty: options.difficulty || 'medium',
@@ -24,9 +29,13 @@ export const createPlayerState = (type, deck, options = {}) => {
     maxHp: 3500,
     elixir: 10,
     maxElixir: 10,
-    deck: defaultDeck,
-    hand: createInitialHand(defaultDeck),
-    handIndex: 4,
+    
+    // Deck cycling integration
+    deck: deckCyclingState.deck,
+    deckCyclingState, // Full cycling state with hand, cycle tracking, etc.
+    hand: deckCyclingState.hand, // Reference to hand for compatibility
+    handIndex: deckCyclingState.cycleIndex, // Keep for compatibility, but use deckCyclingState
+    
     towers: initializeTowers(options.ownerType || 'player'),
     troops: [],
     buildings: [],
@@ -61,10 +70,17 @@ export const createBotPlayer = difficulty => {
  * Reset player for new game
  */
 export const resetPlayerState = playerState => {
+  // Create fresh cycling state
+  const deckCyclingState = createDeckCyclingState(playerState.deck)
+
   playerState.hp = playerState.maxHp
   playerState.elixir = 10
-  playerState.hand = createInitialHand(playerState.deck)
-  playerState.handIndex = 4
+  
+  // Reset deck cycling
+  playerState.deckCyclingState = deckCyclingState
+  playerState.hand = deckCyclingState.hand
+  playerState.handIndex = deckCyclingState.cycleIndex
+  
   playerState.troops = []
   playerState.buildings = []
   playerState.lastCardPlayTime = 0

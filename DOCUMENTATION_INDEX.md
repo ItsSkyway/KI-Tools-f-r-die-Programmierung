@@ -8,6 +8,13 @@
 - **Need details?** → [ENHANCEMENTS_GUIDE.md](ENHANCEMENTS_GUIDE.md)
 - **Looking for code?** → [IMPLEMENTATION_TIPS.md](IMPLEMENTATION_TIPS.md)
 
+### 🆕 NEW: 4-Card Hand + Deck Cycling (Latest)
+- **Quick Start** → [QUICK_GUIDE_DECK_CYCLING.md](QUICK_GUIDE_DECK_CYCLING.md) (User guide)
+- **Game Design** → [GDD_HAND_CYCLING.md](GDD_HAND_CYCLING.md) (Design doc)
+- **Testing Guide** → [TESTING_DECK_CYCLING.md](TESTING_DECK_CYCLING.md) (Test cases)
+- **Balance Report** → [BALANCE_VALIDATION.md](BALANCE_VALIDATION.md) (Balance analysis)
+- **Implementation** → [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) (Code summary)
+
 ---
 
 ## 📚 Documentation Guide

@@ -1,0 +1,363 @@
+/**
+ * arenaDemo.css
+ * Styling for Arena Demo Component
+ */
+
+.arena-demo {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.arena-demo h1 {
+  text-align: center;
+  color: #00d4ff;
+  margin-bottom: 30px;
+  font-size: 2.5em;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.arena-demo h3 {
+  color: #00d4ff;
+  font-size: 1.3em;
+  margin-top: 20px;
+  margin-bottom: 15px;
+}
+
+.arena-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  border-radius: 10px;
+  border: 2px solid #00d4ff;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+}
+
+.arena-wrapper canvas {
+  border-radius: 5px;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+/* ============================================================================
+   CONTROLS
+   ============================================================================ */
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 768px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+.spawn-controls {
+  background: rgba(0, 20, 40, 0.8);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #00d4ff;
+}
+
+.spawn-controls h3 {
+  margin-top: 0;
+  color: #00d4ff;
+}
+
+.spawn-controls p {
+  color: #aaa;
+  font-size: 0.9em;
+  margin: 12px 0 8px 0;
+  font-weight: bold;
+}
+
+.button-group {
+  margin-bottom: 25px;
+}
+
+.button-group:last-child {
+  margin-bottom: 0;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn-left {
+  background: linear-gradient(135deg, #3a5f8f 0%, #2a4f7f 100%);
+  color: white;
+  border: 2px solid #5a7faf;
+}
+
+.btn-left:hover {
+  background: linear-gradient(135deg, #4a6f9f 0%, #3a5f8f 100%);
+  box-shadow: 0 0 15px rgba(90, 127, 175, 0.5);
+}
+
+.btn-center {
+  background: linear-gradient(135deg, #6f4f2f 0%, #5f3f1f 100%);
+  color: white;
+  border: 2px solid #8f6f4f;
+}
+
+.btn-center:hover {
+  background: linear-gradient(135deg, #7f5f3f 0%, #6f4f2f 100%);
+  box-shadow: 0 0 15px rgba(143, 111, 79, 0.5);
+}
+
+.btn-right {
+  background: linear-gradient(135deg, #3a5f8f 0%, #2a4f7f 100%);
+  color: white;
+  border: 2px solid #5a7faf;
+}
+
+.btn-right:hover {
+  background: linear-gradient(135deg, #4a6f9f 0%, #3a5f8f 100%);
+  box-shadow: 0 0 15px rgba(90, 127, 175, 0.5);
+}
+
+.btn-debug {
+  width: 100%;
+  background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
+  color: white;
+  border: 2px solid #ff8787;
+  margin-bottom: 20px;
+}
+
+.btn-debug:hover {
+  background: linear-gradient(135deg, #ff7c7c 0%, #d93c3c 100%);
+  box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+}
+
+.btn-debug:active {
+  background: linear-gradient(135deg, #ff5252 0%, #b91c1c 100%);
+}
+
+/* ============================================================================
+   DEBUG SECTION
+   ============================================================================ */
+
+.debug-section {
+  background: rgba(0, 20, 40, 0.8);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #ff6b6b;
+}
+
+.debug-section h3 {
+  color: #ff6b6b;
+  margin-top: 0;
+}
+
+.stats {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 6px;
+  border-left: 4px solid #00d4ff;
+  margin-top: 15px;
+}
+
+.stats p {
+  color: #00d4ff;
+  margin: 8px 0;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95em;
+}
+
+.stats strong {
+  color: #fff;
+}
+
+/* ============================================================================
+   INFO SECTION
+   ============================================================================ */
+
+.info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+@media (max-width: 768px) {
+  .info {
+    grid-template-columns: 1fr;
+  }
+}
+
+.info h3 {
+  grid-column: 1 / -1;
+  margin-top: 0;
+  text-align: center;
+  color: #00d4ff;
+  font-size: 1.5em;
+}
+
+.info ul {
+  list-style: none;
+  padding: 20px;
+  background: rgba(0, 20, 40, 0.8);
+  border-radius: 8px;
+  border: 1px solid #00d4ff;
+  margin: 0;
+}
+
+.info li {
+  color: #aaa;
+  margin-bottom: 12px;
+  padding-left: 25px;
+  position: relative;
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+
+.info li:last-child {
+  margin-bottom: 0;
+}
+
+.info li:before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #00d4ff;
+  font-weight: bold;
+}
+
+.info strong {
+  color: #00d4ff;
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 600px) {
+  .arena-demo {
+    padding: 10px;
+  }
+
+  .arena-demo h1 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+  }
+
+  .arena-wrapper {
+    padding: 10px;
+    margin-bottom: 20px;
+  }
+
+  .controls {
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .spawn-controls,
+  .debug-section {
+    padding: 15px;
+  }
+
+  .btn {
+    padding: 10px 12px;
+    font-size: 0.9em;
+  }
+
+  .info {
+    gap: 15px;
+  }
+
+  .info ul {
+    padding: 15px;
+  }
+
+  .info li {
+    font-size: 0.85em;
+  }
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+  }
+}
+
+.arena-wrapper {
+  animation: pulse 2s infinite;
+}
+
+@keyframes glow {
+  0% {
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(0, 212, 255, 1);
+  }
+  100% {
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  }
+}
+
+.arena-demo h1 {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* ============================================================================
+   SCROLLBAR STYLING
+   ============================================================================ */
+
+.arena-demo::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.arena-demo::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.arena-demo::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.3);
+  border-radius: 10px;
+}
+
+.arena-demo::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 212, 255, 0.6);
+}

@@ -4,7 +4,7 @@
  */
 
 // ============================================================================
-// ARENA & RENDERING
+// ARENA & RENDERING - CLASH ROYALE ACCURATE
 // ============================================================================
 
 export const GAME_WIDTH = 600
@@ -12,13 +12,61 @@ export const GAME_HEIGHT = 800
 export const ARENA_WIDTH = 600
 export const ARENA_HEIGHT = 800
 
-export const LANE_WIDTH = 300
-export const LANE_HEIGHT = 400
+// River divides the arena at y=400
+export const RIVER_Y = 400
+export const RIVER_WIDTH = 200 // Center lane (x: 200-400)
 
-// Two lanes: top & bottom
+// Territories
+export const ENEMY_TERRITORY_START = 0
+export const ENEMY_TERRITORY_END = 400
+export const PLAYER_TERRITORY_START = 400
+export const PLAYER_TERRITORY_END = 800
+
+// Three-Lane System (Clash Royale accurate)
 export const LANES = {
-  top: { startX: 0, startY: 0, centerX: LANE_WIDTH / 2, centerY: LANE_HEIGHT / 2 },
-  bottom: { startX: LANE_WIDTH, startY: 0, centerX: LANE_WIDTH / 2 + LANE_WIDTH, centerY: LANE_HEIGHT / 2 },
+  left: {
+    id: 'left',
+    x: 100, // Center of left lane (x: 0-200)
+    minX: 0,
+    maxX: 200,
+    color: '#2a5f7f',
+  },
+  center: {
+    id: 'center',
+    x: 300, // Center of center lane (x: 200-400)
+    minX: 200,
+    maxX: 400,
+    color: '#3a6f8f',
+  },
+  right: {
+    id: 'right',
+    x: 500, // Center of right lane (x: 400-600)
+    minX: 400,
+    maxX: 600,
+    color: '#2a5f7f',
+  },
+}
+
+// Bridge Crossings (Units können nur über Brücken das River überqueren)
+export const BRIDGES = {
+  left: {
+    x: 150, // Left bridge crossing point
+    y: RIVER_Y,
+    width: 80,
+    height: 40,
+  },
+  right: {
+    x: 450, // Right bridge crossing point
+    y: RIVER_Y,
+    width: 80,
+    height: 40,
+  },
+}
+
+// River collision zone
+export const RIVER_ZONE = {
+  startY: RIVER_Y - 20,
+  endY: RIVER_Y + 20,
 }
 
 // ============================================================================
@@ -41,16 +89,50 @@ export const ELIXIR_REGENERATION_RATE_DOUBLE = 2 // per second during double eli
 // TOWERS
 // ============================================================================
 
+// ============================================================================
+// TOWERS - CLASH ROYALE 3-LANE ACCURATE
+// ============================================================================
+
 export const TOWER_POSITIONS = {
   player: {
-    kingTower: { x: ARENA_WIDTH / 2, y: ARENA_HEIGHT - 60, isKing: true },
-    princessLeft: { x: LANE_WIDTH / 2 - 80, y: ARENA_HEIGHT - 120 },
-    princessRight: { x: LANE_WIDTH / 2 + 80, y: ARENA_HEIGHT - 120 },
+    kingTower: {
+      x: LANES.center.x, // 300 - Center lane
+      y: ARENA_HEIGHT - 60,
+      isKing: true,
+      lane: 'center',
+    },
+    princessLeft: {
+      x: LANES.left.x, // 100 - Left lane
+      y: ARENA_HEIGHT - 120,
+      isKing: false,
+      lane: 'left',
+    },
+    princessRight: {
+      x: LANES.right.x, // 500 - Right lane
+      y: ARENA_HEIGHT - 120,
+      isKing: false,
+      lane: 'right',
+    },
   },
   enemy: {
-    kingTower: { x: ARENA_WIDTH / 2, y: 60, isKing: true },
-    princessLeft: { x: LANE_WIDTH / 2 - 80, y: 120 },
-    princessRight: { x: LANE_WIDTH / 2 + 80, y: 120 },
+    kingTower: {
+      x: LANES.center.x, // 300 - Center lane
+      y: 60,
+      isKing: true,
+      lane: 'center',
+    },
+    princessLeft: {
+      x: LANES.left.x, // 100 - Left lane
+      y: 120,
+      isKing: false,
+      lane: 'left',
+    },
+    princessRight: {
+      x: LANES.right.x, // 500 - Right lane
+      y: 120,
+      isKing: false,
+      lane: 'right',
+    },
   },
 }
 

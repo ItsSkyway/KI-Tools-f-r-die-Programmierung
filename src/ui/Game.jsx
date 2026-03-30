@@ -3,6 +3,7 @@
  * Main Game Component (refactored)
  * 
  * This is now a thin wrapper around modular game logic
+ * Enhanced with audio and animation systems
  */
 
 import React, { useState, useEffect, useRef } from 'react'
@@ -10,6 +11,9 @@ import { useGameState } from '../game/gameState.js'
 import { runGameFrame } from '../game/gameLoop.js'
 import { makeDecision, shouldPlayCard } from '../players/botAI.js'
 import { spawnCard } from '../simulation/unitSpawning.js'
+import { soundManager } from '../audio/soundManager.js'
+import { animationManager } from '../animation/animationManager.js'
+import * as spriteAnimations from '../animation/spriteAnimations.js'
 import GameBoard from './GameBoard'
 import PlayerStats from './PlayerStats'
 import CardHand from './CardHand'
@@ -37,10 +41,24 @@ export default function Game() {
   const [selectedCards, setSelectedCards] = useState([])
   const [selectedSpellCard, setSelectedSpellCard] = useState(null) // PHASE 6: Track selected spell
   const canvasRef = useRef(null) // PHASE 6: Reference to canvas for click handling
+  const audioInitializedRef = useRef(false)
+  const lastUnitCountRef = useRef({ player: 0, enemy: 0 })
+  const lastTowerHpRef = useRef({ player: {}, enemy: {} })
 
   // Game loop
   useEffect(() => {
     if (screen !== 'playing') return
+
+    // Initialize audio on first playing (triggered by user)
+    if (!audioInitializedRef.current) {
+      soundManager.initialize()
+      audioInitializedRef.current = true
+      soundManager.playSfx('matchStart')
+      console.log('🎮 Game started - Audio & Animation systems ready')
+    }
+
+    // Start animation loop
+    animationManager.start()
 
     const gameInterval = setInterval(() => {
       const gs = gameStateRef.current
@@ -48,6 +66,14 @@ export default function Game() {
 
       if (gs.gameOver) {
         clearInterval(gameInterval)
+        
+        // Play game end audio
+        if (gs.winner === 'player') {
+          soundManager.playSfx('victory')
+        } else {
+          soundManager.playSfx('defeat')
+        }
+        
         endGame(gs.winner)
         return
       }
@@ -58,9 +84,15 @@ export default function Game() {
 
       // Run simulation
       runGameFrame(gs, towers)
+
+      // Track unit spawns and deaths
+      _detectGameEvents(gs, towers)
     }, 33)
 
-    return () => clearInterval(gameInterval)
+    return () => {
+      clearInterval(gameInterval)
+      animationManager.stop()
+    }
   }, [screen, endGame, gameStateRef, towerStateRef])
 
   // Bot AI loop
@@ -105,10 +137,21 @@ export default function Game() {
     const card = getCard(cardId) // BUG #2 FIXED: Get actual card instead of hardcoded
 
     if (card && spendPlayerElixir(card.elixirCost)) {
+      // Play card placement sound
+      soundManager.playSfx('cardPlaced')
+
       const units = spawnCard(cardId, 'player', 300, 700) // BUG #4: Get spawned units
       gs.playerTroops.push(...units) // BUG #4: Add units to game state
       gameStateRef.current = gs // Update ref
       gs.lastCardPlayTime.player = Date.now()
+      
+      // Animate unit spawns
+      units.forEach((unit, index) => {
+        setTimeout(() => {
+          spriteAnimations.spawnUnitAnimation(unit)
+          soundManager.playSfx('unitSpawn')
+        }, index * 100) // Stagger spawn animations
+      })
       
       // PHASE 5: Cycle hand - remove played card and add new card from full deck
       if (selectedCards && selectedCards.length > 0) {
@@ -124,11 +167,66 @@ export default function Game() {
           })
         }
       }
+    } else if (card) {
+      // Not enough elixir - play error sound and shake animation
+      soundManager.playSfx('cardError')
     }
   }
 
   // Get player hand from game state
   const playerHand = gameStateRef.current?.playerHand || []
+
+  /**
+   * Detect game events and trigger audio/animations
+   */
+  const _detectGameEvents = (gs, towers) => {
+    // Detect unit deaths
+    const playerUnitCount = gs.playerTroops.length
+    const enemyUnitCount = gs.enemyTroops.length
+
+    if (playerUnitCount < lastUnitCountRef.current.player) {
+      // Player unit died
+      const deadCount = lastUnitCountRef.current.player - playerUnitCount
+      for (let i = 0; i < deadCount; i++) {
+        soundManager.playSfx('unitDeath')
+      }
+    }
+
+    if (enemyUnitCount < lastUnitCountRef.current.enemy) {
+      // Enemy unit died
+      const deadCount = lastUnitCountRef.current.enemy - enemyUnitCount
+      for (let i = 0; i < deadCount; i++) {
+        soundManager.playSfx('unitDeath')
+      }
+    }
+
+    lastUnitCountRef.current = { player: playerUnitCount, enemy: enemyUnitCount }
+
+    // Detect tower damage
+    Object.entries(towers.player).forEach(([key, tower]) => {
+      const lastHp = lastTowerHpRef.current.player[key]
+      if (lastHp && lastHp > tower.hp) {
+        soundManager.playSfx('towerDamage')
+      }
+      lastTowerHpRef.current.player[key] = tower.hp
+    })
+
+    Object.entries(towers.enemy).forEach(([key, tower]) => {
+      const lastHp = lastTowerHpRef.current.enemy[key]
+      if (lastHp && lastHp > tower.hp) {
+        soundManager.playSfx('towerDamage')
+      }
+      lastTowerHpRef.current.enemy[key] = tower.hp
+    })
+  }
+
+  /**
+   * Handle sound toggle
+   */
+  const _handleSoundToggle = () => {
+    const isMuted = soundManager.toggleMute()
+    soundManager.playSfx(isMuted ? 'cardError' : 'cardPlaced')
+  }
 
   // Calculate game over stats
   const gameOverStats = gameStateRef.current && {
@@ -155,6 +253,32 @@ export default function Game() {
 
       {screen === 'playing' && (
         <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Sound Control Button */}
+          <button
+            onClick={_handleSoundToggle}
+            style={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              zIndex: 1000,
+              background: 'rgba(0,0,0,0.6)',
+              border: '1px solid #fff',
+              color: '#fff',
+              width: 40,
+              height: 40,
+              borderRadius: 4,
+              cursor: 'pointer',
+              fontSize: 18,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+            title={soundManager.isMuted ? 'Unmute' : 'Mute'}
+          >
+            {soundManager.isMuted ? '🔇' : '🔊'}
+          </button>
+
           <GameBoard gameState={gameStateRef.current} towers={towerStateRef.current} />
           <PlayerStats 
             playerHp={gameStateRef.current?.playerTower?.hp || 0}
@@ -179,6 +303,9 @@ export default function Game() {
           winner={gameOverStats.winner}
           onPlayAgain={() => {
             setScreen('deckBuilder')
+            // Reset audio/animation for next game
+            soundManager.stopAll()
+            animationManager.cancelAll()
           }}
         />
       )}

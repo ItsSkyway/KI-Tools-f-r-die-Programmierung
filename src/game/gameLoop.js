@@ -123,6 +123,7 @@ export const runGameFrame = (gameState, towers, deltaMs = 33) => {
 
 /**
  * Process units on one side (movement, combat)
+ * Implements correct unit behavior: targeting, movement, combat, death
  */
 const processUnits = (friendlyUnits, friendlyBuildings, enemies, enemyTowers, gameState = null) => {
   friendlyUnits.forEach(unit => {
@@ -154,25 +155,33 @@ const processUnits = (friendlyUnits, friendlyBuildings, enemies, enemyTowers, ga
       return
     }
 
-    // BUG #7 FIXED: Skip frozen units
+    // Skip frozen units
     if (unit.frozen && Date.now() < unit.frozenUntil) return
 
-    // Find target
+    // ========== INTELLIGENT TARGET PRIORITIZATION ==========
+    // Priority 1: Buildings in Range (nächster)
+    // Priority 2: Enemy Towers in Range (nächster)
+    // Priority 3: Enemy Troops in Range (nächster nach Health)
     const target = findNearestEnemy(unit, enemies, enemyTowers)
 
-    if (target) {
-      // Move towards target
+    if (target && target.hp > 0) {
+      // ========== MOVEMENT TOWARDS TARGET ==========
+      // Smooth lerp movement (không teleport)
       updateUnitMovement(unit, target)
 
-      // Check range and attack
+      // ========== CHECK RANGE & PREPARE ATTACK ==========
       const dist = Math.hypot(target.x - unit.x, target.y - unit.y)
       const range = unit.stats.range || 100
 
       if (dist < range) {
-        performAttack(unit, target)
+        // In range: perform attack with splash damage handling
+        const allEnemyUnits = [...enemies.troops, ...(enemies.buildings || [])]
+        performAttack(unit, target, allEnemyUnits)
       }
     } else {
-      // No target, move towards enemy side
+      // ========== NO TARGET: MOVE TOWARDS ENEMY SIDE ==========
+      // Troops bewegen sich nach Spawn in Richtung gegner Hälfte
+      // Lane-based movement keeps units in corridors
       updateUnitMovement(unit, null)
     }
   })
@@ -180,19 +189,26 @@ const processUnits = (friendlyUnits, friendlyBuildings, enemies, enemyTowers, ga
 
 /**
  * Process tower attacks
+ * Towers find targets using intelligent prioritization
  */
 const processTowers = (towerSet, enemyTroops, enemyBuildings) => {
   Object.values(towerSet).forEach(tower => {
     if (tower.hp <= 0) return
 
-    // Find target
-    let target = findNearestEnemy({ x: tower.x, y: tower.y, stats: { range: tower.range } }, {
-      troops: enemyTroops,
-      buildings: enemyBuildings,
-    }, [])
+    // Towers behave like units: find best target
+    let target = findNearestEnemy(
+      { x: tower.x, y: tower.y, stats: { range: tower.range, targetBuildings: true } },
+      {
+        troops: enemyTroops,
+        buildings: enemyBuildings,
+      },
+      []
+    )
 
     if (target) {
-      towerAttack(tower, target)
+      // Towers can also have splash damage
+      const allEnemyUnits = [...enemyTroops, ...(enemyBuildings || [])]
+      towerAttack(tower, target, allEnemyUnits)
     }
   })
 }

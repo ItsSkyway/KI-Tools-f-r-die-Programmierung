@@ -34,3 +34,327 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ============================================= */
+/* ANIMATION KEYFRAMES - GAME EFFECTS            */
+/* ============================================= */
+
+/**
+ * Pulse animation for timer and warnings
+ */
+@keyframes pulse-red {
+  0%, 100% {
+    color: #ff4444;
+    text-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
+  }
+  50% {
+    color: #ff8888;
+    text-shadow: 0 0 15px rgba(255, 136, 136, 0.6);
+  }
+}
+
+/**
+ * Scale pop effect (for card placement, unit spawns)
+ */
+@keyframes scale-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/**
+ * Float up animation (for floating text, emotes)
+ */
+@keyframes float-up {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+}
+
+/**
+ * Glow pulse animation
+ */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.1);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.3);
+    filter: brightness(1.2);
+  }
+}
+
+/**
+ * Shake animation (for unavailable/error states)
+ */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+  75% {
+    transform: translateX(-6px);
+  }
+}
+
+/**
+ * Bounce animation (for emotes, great plays)
+ */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-30px);
+  }
+}
+
+/**
+ * Spin animation (for loading, unit death)
+ */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/**
+ * Flash animation (for damage, effects)
+ */
+@keyframes flash {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/**
+ * Screen flash (white flash overlay)
+ */
+@keyframes screen-flash {
+  0% {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    background-color: rgba(255, 255, 255, 0);
+  }
+}
+
+/**
+ * Card hover lift effect
+ */
+@keyframes card-lift {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-10px);
+  }
+}
+
+/**
+ * Slide in from left
+ */
+@keyframes slide-in-left {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/**
+ * Slide in from right
+ */
+@keyframes slide-in-right {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/**
+ * Slide in from top
+ */
+@keyframes slide-in-top {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/**
+ * Slide in from bottom
+ */
+@keyframes slide-in-bottom {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/**
+ * Expand animation (for explosion, area effects)
+ */
+@keyframes expand {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/**
+ * Shrink animation (for damage, debuffs)
+ */
+@keyframes shrink {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+}
+
+/**
+ * Chromatic aberration effect (for critical hits)
+ */
+@keyframes chromatic {
+  0%, 100% {
+    text-shadow: 
+      -2px 0 rgba(255, 0, 0, 0.3),
+      2px 0 rgba(0, 255, 255, 0.3);
+  }
+  50% {
+    text-shadow: 
+      -1px 0 rgba(255, 0, 0, 0.5),
+      1px 0 rgba(0, 255, 255, 0.5);
+  }
+}
+
+/**
+ * Victory celebration
+ */
+@keyframes celebrate {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3) rotate(0deg);
+  }
+  100% {
+    transform: scale(1) translateY(-100px) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+/**
+ * Defeat sadness
+ */
+@keyframes defeat-fade {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    color: #fff;
+  }
+  100% {
+    transform: scale(0.8) translateY(30px);
+    opacity: 0;
+    color: #666;
+  }
+}
+
+/**
+ * Utility classes for CSS animation application
+ */
+.animate-pulse-red {
+  animation: pulse-red 1.5s ease-in-out infinite;
+}
+
+.animate-scale-pop {
+  animation: scale-pop 0.3s ease-out;
+}
+
+.animate-float-up {
+  animation: float-up 2s ease-out forwards;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-shake {
+  animation: shake 0.2s ease-in-out;
+}
+
+.animate-bounce {
+  animation: bounce 0.4s ease-out;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-flash {
+  animation: flash 0.5s ease-in-out;
+}
+
+.animate-card-lift {
+  animation: card-lift 0.3s ease-out forwards;
+}
+
+.animate-expand {
+  animation: expand 0.5s ease-out forwards;
+}
+
+.animate-celebrate {
+  animation: celebrate 0.8s ease-out forwards;
+}
+
+.animate-defeat-fade {
+  animation: defeat-fade 1s ease-out forwards;
+}
+

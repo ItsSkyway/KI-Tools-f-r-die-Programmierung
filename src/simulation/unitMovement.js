@@ -1,16 +1,20 @@
 /**
- * Unit Movement
- * Pathfinding and movement logic
+ * Unit Movement System
+ * Pathfinding, lane-based movement, and smooth lerp animations
  */
 
-import { LANES, LANE_WIDTH, ARENA_HEIGHT } from '../game/constants.js'
+import { LANES, LANE_WIDTH, ARENA_HEIGHT, RIVER_Y, BRIDGES, ARENA_WIDTH } from '../game/constants.js'
+
+// ============================================================================
+// CORE MOVEMENT
+// ============================================================================
 
 /**
- * Move unit towards target position
+ * Smooth lerp movement towards target
  * @param {Unit} unit
  * @param {number} targetX
  * @param {number} targetY
- * @param {number} speed - pixels per frame
+ * @param {number} speed - pixels per frame (0.6 to 1.5 base multiplier)
  * @returns {boolean} - true if reached target
  */
 export const moveUnit = (unit, targetX, targetY, speed = 1) => {
@@ -22,6 +26,7 @@ export const moveUnit = (unit, targetX, targetY, speed = 1) => {
     return true // Reached target
   }
 
+  // Smooth lerp movement (não teleport)
   const ratio = speed / dist
   unit.x += (targetX - unit.x) * ratio
   unit.y += (targetY - unit.y) * ratio
@@ -29,57 +34,117 @@ export const moveUnit = (unit, targetX, targetY, speed = 1) => {
   return false
 }
 
+// ============================================================================
+// LANE MANAGEMENT & PATHFINDING
+// ============================================================================
+
 /**
- * Get target lane for spawned unit
- * @param {Unit} unit
- * @returns {'top'|'bottom'} - Lane to move to
+ * Get lane index for unit X position
+ * Returns: 'left' (0-200), 'center' (200-400), 'right' (400-600)
  */
-export const selectLane = unit => {
-  // Random lane selection
-  return Math.random() > 0.5 ? 'top' : 'bottom'
+export const getLaneFromX = (x) => {
+  if (x < 200) return 'left'
+  if (x < 400) return 'center'
+  return 'right'
 }
 
 /**
- * Get next waypoint for unit (lane-based pathfinding)
- * @param {Unit} unit - Unit with owner & lane
- * @returns {{x: number, y: number}}
+ * Get center X for lane
  */
-export const getNextWaypoint = unit => {
-  if (unit.owner === 'player') {
-    // Moving towards enemy (top)
-    const lane = unit.lane || selectLane(unit)
+export const getLaneCenterX = (lane) => {
+  if (lane === 'left') return 100
+  if (lane === 'center') return 300
+  return 500
+}
 
-    const x = lane === 'top' ? LANE_WIDTH / 2 : LANE_WIDTH / 2 + LANE_WIDTH
-
-    return { x, y: Math.max(0, unit.y - 100) }
-  } else {
-    // Moving towards player (bottom)
-    const lane = unit.lane || selectLane(unit)
-
-    const x = lane === 'top' ? LANE_WIDTH / 2 : LANE_WIDTH / 2 + LANE_WIDTH
-
-    return { x, y: Math.min(ARENA_HEIGHT, unit.y + 100) }
+/**
+ * Constrain unit to lane boundaries
+ */
+export const constrainToLane = (unit, lane) => {
+  if (lane === 'left') {
+    unit.x = Math.max(0, Math.min(200, unit.x))
+  } else if (lane === 'center') {
+    unit.x = Math.max(200, Math.min(400, unit.x))
+  } else if (lane === 'right') {
+    unit.x = Math.max(400, Math.min(600, unit.x))
   }
 }
 
 /**
- * Update unit position in battle
+ * Check if unit is at river and needs bridge
+ */
+export const isAtRiver = (unit) => {
+  return Math.abs(unit.y - RIVER_Y) < 60 // Within river zone
+}
+
+/**
+ * Get nearest bridge for unit to cross
+ */
+export const getNearestBridge = (unit) => {
+  const currentLane = getLaneFromX(unit.x)
+  if (currentLane === 'left' || currentLane === 'center') {
+    return BRIDGES.left // Left bridge for left/center lanes
+  }
+  return BRIDGES.right // Right bridge for right lane
+}
+
+/**
+ * Get next waypoint for unit movement (lane-based pathfinding)
+ * Player spawns at bottom (y=800) moving to top (y=0)
+ * Enemy spawns at top (y=0) moving to bottom (y=800)
+ */
+export const getNextWaypoint = (unit, lanes = LANES) => {
+  const currentLane = unit.lane || getLaneFromX(unit.x)
+  const laneCenterX = getLaneCenterX(currentLane)
+
+  if (unit.owner === 'player') {
+    // Moving towards enemy (top, y=0)
+    const isMovingTowardRiver = unit.y > RIVER_Y
+    
+    if (isMovingTowardRiver) {
+      // Move to bridge crossing
+      const bridge = getNearestBridge(unit)
+      return { x: bridge.x, y: bridge.y }
+    } else {
+      // Move up to king tower
+      return { x: laneCenterX, y: 0 }
+    }
+  } else {
+    // Moving towards player (bottom, y=800)
+    const isMovingTowardRiver = unit.y < RIVER_Y
+    
+    if (isMovingTowardRiver) {
+      // Move to bridge crossing
+      const bridge = getNearestBridge(unit)
+      return { x: bridge.x, y: bridge.y }
+    } else {
+      // Move down to king tower
+      return { x: laneCenterX, y: ARENA_HEIGHT }
+    }
+  }
+}
+
+/**
+ * Update unit position - handles movement and lane constraints
  * @param {Unit} unit
- * @param {Unit|Tower|null} target
+ * @param {Unit|Tower|null} target - If has target, move towards it
  */
 export const updateUnitMovement = (unit, target) => {
-  // If has target, move towards it
+  // Base speed: 0.6 to 1.5 scaled to game frame (33ms)
+  const baseSpeed = (unit.stats.speed || 1) * 0.5
+  
   if (target && target.hp > 0) {
-    const speed = (unit.stats.speed || 1) * 0.5 // Scale to game speed
-
-    moveUnit(unit, target.x, target.y, speed)
+    // Has target: move towards it directly
+    moveUnit(unit, target.x, target.y, baseSpeed)
   } else {
-    // Move towards enemy side
+    // No target: move towards enemy side via waypoints
     const waypoint = getNextWaypoint(unit)
-    const speed = (unit.stats.speed || 1) * 0.5
-
-    moveUnit(unit, waypoint.x, waypoint.y, speed)
+    moveUnit(unit, waypoint.x, waypoint.y, baseSpeed)
   }
+
+  // Keep unit in lane corridor (important for clean visuals)
+  const lane = unit.lane || getLaneFromX(unit.x)
+  constrainToLane(unit, lane)
 }
 
 /**

@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚔️ Clash Royale - Premium Architecture</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; overflow: hidden; background: linear-gradient(135deg, #1a1f3a 0%, #0f1729 50%, #1a1f3a 100%); }
+    #root { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; }
+    
+    /* Animations */
+    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); } 50% { box-shadow: 0 0 40px rgba(255, 215, 0, 1); } }
+    @keyframes card-spawn { 0% { transform: scale(0.7) rotateY(90deg); opacity: 0; } 100% { transform: scale(1) rotateY(0deg); opacity: 1; } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    @keyframes victory-popup { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes damage-pop { 0% { transform: scale(1) translateY(0); opacity: 1; } 100% { transform: scale(0.5) translateY(-40px); opacity: 0; } }
+    @keyframes card-lift { 0% { transform: translateY(0); } 100% { transform: translateY(-12px); } }
+    @keyframes drag-float { 0%, 100% { box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(147, 51, 234, 0.6); } 50% { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 40px rgba(147, 51, 234, 0.8); } }
+    @keyframes valid-glow { 0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.4), inset 0 0 20px rgba(34, 197, 94, 0.2); } 50% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.6), inset 0 0 30px rgba(34, 197, 94, 0.3); } }
+    @keyframes invalid-pulse { 0%, 100% { border-color: rgba(239, 68, 68, 0.8); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); } 50% { border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); } }
+    @keyframes cycle-indicator { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.1); } }
+    @keyframes phase-pulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+    @keyframes water-flow { 0% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
+    @keyframes bridge-glow { 0%, 100% { box-shadow: 0 0 15px rgba(139, 69, 19, 0.3); } 50% { box-shadow: 0 0 25px rgba(210, 180, 140, 0.5); } }
+    
+    .water-flow { animation: water-flow 8s linear infinite; }
+    .bridge-glow { animation: bridge-glow 3s ease-in-out infinite; }
+    
+    /* Medieval Theme - Stone/Castle Textures */
+    .medieval-stone {
+      background: linear-gradient(135deg, #6b5d52 0%, #8b7355 25%, #6b5d52 50%, #7a6e65 75%, #6b5d52 100%);
+      background-size: 100px 100px;
+      position: relative;
+    }
+    
+    .stone-texture::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs><pattern id="stone" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="40" height="40" fill="rgba(0,0,0,0.1)"/><path d="M0,0 L40,40" stroke="rgba(0,0,0,0.08)" stroke-width="1"/><path d="M40,0 L0,40" stroke="rgba(0,0,0,0.08)" stroke-width="1"/></pattern></defs><rect width="200" height="200" fill="url(%23stone)"/></svg>') repeat;
+      pointer-events: none;
+      opacity: 0.3;
+    }
+    .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+    .card-spawn { animation: card-spawn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .shake { animation: shake 0.3s ease-in-out; }
+    .victory-popup { animation: victory-popup 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .damage-number { animation: damage-pop 1.5s ease-out forwards; }
+    .card-lift { animation: card-lift 0.3s ease-in-out; }
+    .drag-float { animation: drag-float 0.6s ease-in-out infinite; }
+    .valid-zone { animation: valid-glow 1s ease-in-out infinite; }
+    .invalid-zone { animation: invalid-pulse 0.6s ease-in-out; }
+    .cycle-pulse { animation: cycle-indicator 1.2s ease-in-out infinite; }
+    .phase-indicator-pulse { animation: phase-pulse 1.5s ease-in-out infinite; }
+    
+    /* Dark Fantasy Theme - Enhanced Rarity Colors */
+    .rarity-common { background: linear-gradient(135deg, #6B4423 0%, #C9A961 100%); border-color: #E8D5B7; color: #FFF; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+    .rarity-rare { background: linear-gradient(135deg, #1E5F9E 0%, #4A9FD8 100%); border-color: #6EB5E8; color: #FFF; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+    .rarity-epic { background: linear-gradient(135deg, #6B2D7F 0%, #A855F7 100%); border-color: #D4AAFF; color: #FFF; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+    .rarity-legendary { background: linear-gradient(135deg, #B8860B 0%, #FF8C00 100%); border-color: #FFB84D; color: #000; text-shadow: 1px 1px 2px rgba(255,255,255,0.4); box-shadow: 0 0 30px rgba(255, 165, 0, 0.9), inset 0 0 20px rgba(255, 215, 0, 0.3); }
+    
+    /* 4-Card Hand Container */
+    .hand-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.98) 100%);
+      border-top: 3px solid rgba(147, 51, 234, 0.6);
+      border-left: 2px solid #1f2937;
+      border-right: 2px solid #1f2937;
+      border-bottom: 2px solid #1f2937;
+      border-radius: 12px 12px 0 0;
+      backdrop-filter: blur(10px);
+      min-height: 140px;
+    }
+    
+    /* Hand Card Styles */
+    .hand-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      border: 2px solid;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      background: linear-gradient(135deg, rgba(55, 65, 81, 0.9) 0%, rgba(31, 41, 55, 0.95) 100%);
+      user-select: none;
+      overflow: visible;
+      min-height: 100px;
+    }
+    
+    .hand-card:hover:not(.cannot-play) {
+      transform: translateY(-12px) scale(1.05);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(147, 51, 234, 0.5);
+    }
+    
+    .hand-card.dragging {
+      opacity: 0.4;
+      filter: grayscale(100%);
+      cursor: grabbing;
+    }
+    
+    .hand-card.can-play {
+      cursor: grab;
+    }
+    
+    .hand-card.cannot-play {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: rgba(107, 114, 128, 0.5) !important;
+    }
+    
+    .hand-card-emoji {
+      font-size: 32px;
+      line-height: 1;
+      margin-bottom: 4px;
+      display: block;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .hand-card-name {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+      text-align: center;
+      margin-bottom: 4px;
+      color: #fff;
+    }
+    
+    .hand-card-cost {
+      font-size: 13px;
+      font-weight: 800;
+      color: #FCD34D;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    
+    .hand-card-rarity {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.9;
+    }
+    
+    /* Drag Ghost */
+    .drag-ghost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.85;
+    }
+    
+    /* Drop Zone Indicators */
+    .drop-zone {
+      position: absolute;
+      pointer-events: none;
+      border: 3px dashed rgba(34, 197, 94, 0.3);
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .drop-zone.valid {
+      border-color: rgba(34, 197, 94, 0.8);
+      background: radial-gradient(circle at center, rgba(34, 197, 94, 0.1) 0%, transparent 70%);
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.4), inset 0 0 20px rgba(34, 197, 94, 0.1);
+    }
+    
+    .drop-zone.invalid {
+      border-color: rgba(239, 68, 68, 0.6);
+      background: radial-gradient(circle at center, rgba(239, 68, 68, 0.08) 0%, transparent 70%);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    }
+    
+    /* Cycle Indicator */
+    .cycle-indicator {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #3B82F6;
+      border: 1px solid #93C5FD;
+    }
+    
+    .cycle-indicator.active {
+      background: #10B981;
+      border-color: #6EE7B7;
+      animation: cycle-pulse 1.2s ease-in-out infinite;
+    }
+    
+    /* Timer Display */
+    .timer-display {
+      font-variant-numeric: tabular-nums;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+    
+    .timer-early {
+      color: #fbbf24;
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    }
+    
+    .timer-mid {
+      color: #fb923c;
+      text-shadow: 0 0 10px rgba(251, 146, 60, 0.5), 0 0 20px rgba(251, 146, 60, 0.3);
+    }
+    
+    .timer-late {
+      color: #ef4444;
+      text-shadow: 0 0 15px rgba(239, 68, 68, 0.8), 0 0 30px rgba(239, 68, 68, 0.5);
+      animation: pulse-glow 1s ease-in-out infinite;
+    }
+    
+    .timer-final {
+      color: #dc2626;
+      text-shadow: 0 0 20px rgba(220, 38, 38, 0.9), 0 0 40px rgba(220, 38, 38, 0.6);
+      animation: pulse-glow 0.5s ease-in-out infinite;
+    }
+    
+    /* Phase Indicator Badge */
+    .phase-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: 1px solid;
+    }
+    
+    .phase-badge.early {
+      background: rgba(251, 191, 36, 0.1);
+      border-color: #fbbf24;
+      color: #fcd34d;
+    }
+    
+    .phase-badge.mid {
+      background: rgba(251, 146, 60, 0.1);
+      border-color: #fb923c;
+      color: #fdba74;
+      animation: phase-indicator-pulse 1.5s ease-in-out infinite;
+    }
+    
+    .phase-badge.late {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+      color: #fca5a5;
+      animation: phase-indicator-pulse 1s ease-in-out infinite;
+    }
+    
+    /* Elixir Regen Indicator */
+    .elixir-regen-text {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    
+    .elixir-regen-early {
+      color: #a3e635;
+      opacity: 0.7;
+    }
+    
+    .elixir-regen-mid {
+      color: #fbbf24;
+      opacity: 0.85;
+    }
+    
+    .elixir-regen-late {
+      color: #ef4444;
+      opacity: 1;
+      animation: phase-indicator-pulse 1s ease-in-out infinite;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .hand-container {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        padding: 12px;
+        min-height: 120px;
+      }
+      .hand-card {
+        padding: 8px;
+        min-height: 90px;
+      }
+      .hand-card-emoji { font-size: 24px; }
+      .hand-card-name { font-size: 10px; }
+      .hand-card-cost { font-size: 12px; }
+      .timer-display { font-size: 1.5rem; }
+    }
+    
+    @media (max-width: 480px) {
+      .hand-container {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 8px;
+        min-height: 100px;
+      }
+      .hand-card {
+        padding: 6px;
+        min-height: 80px;
+      }
+      .hand-card-emoji { font-size: 20px; }
+      .hand-card-name { font-size: 9px; }
+      .hand-card-cost { font-size: 11px; }
+      .timer-display { font-size: 1.25rem; }
+    }
+    
+    /* Tower Styles - Clash Royale Style */
+    .tower-king { background: linear-gradient(to bottom, #E74C3C 0%, #C0392B 50%, #A93226 100%); box-shadow: inset 0 2px 5px rgba(0,0,0,0.4), 0 5px 15px rgba(0,0,0,0.6), 0 0 20px rgba(231, 76, 60, 0.4); position: relative; border: 2px solid #96281B; }
+    .tower-king::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%); }
+    .tower-princess { background: linear-gradient(to bottom, #3498DB 0%, #2980B9 50%, #1F618D 100%); box-shadow: inset 0 2px 5px rgba(0,0,0,0.4), 0 5px 15px rgba(0,0,0,0.6), 0 0 20px rgba(52, 152, 219, 0.4); border: 2px solid #1A5276; }
+    .tower-princess::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React
+
+const CARDS = {
+  knight: { id: 'knight', name: 'Knight', emoji: '🛡️', elixirCost: 3, rarity: 'common', type: 'troop', stats: { hp: 600, damage: 100, speed: 1, range: 50, attackSpeed: 1, flying: false } },
+  archer: { id: 'archer', name: 'Archer', emoji: '🏹', elixirCost: 3, rarity: 'common', type: 'troop', stats: { hp: 200, damage: 120, speed: 1.2, range: 120, attackSpeed: 1.2, flying: false } },
+  giant: { id: 'giant', name: 'Giant', emoji: '👹', elixirCost: 5, rarity: 'rare', type: 'troop', stats: { hp: 1800, damage: 60, speed: 0.7, range: 50, attackSpeed: 1.5, targetBuildings: true, flying: false } },
+  fireball: { id: 'fireball', name: 'Fireball', emoji: '🔥', elixirCost: 4, rarity: 'rare', type: 'spell', stats: { damage: 400, splashRadius: 120 } },
+  arrows: { id: 'arrows', name: 'Arrows', emoji: '⬆️', elixirCost: 3, rarity: 'common', type: 'spell', stats: { damage: 200, splashRadius: 150 } },
+  minions: { id: 'minions', name: 'Minions', emoji: '👿', elixirCost: 3, rarity: 'common', type: 'troop', stats: { hp: 100, damage: 80, speed: 1.4, range: 100, attackSpeed: 1, flying: true, count: 3 } },
+  skeletonArmy: { id: 'skeletonArmy', name: 'Skeleton Army', emoji: '💀', elixirCost: 2, rarity: 'rare', type: 'troop', stats: { hp: 60, damage: 40, speed: 1.3, range: 40, attackSpeed: 0.8, count: 12, flying: false } },
+  babyDragon: { id: 'babyDragon', name: 'Baby Dragon', emoji: '🐉', elixirCost: 4, rarity: 'rare', type: 'troop', stats: { hp: 800, damage: 120, speed: 0.9, range: 100, attackSpeed: 1.2, flying: true, splashRadius: 80 } },
+  valkyrie: { id: 'valkyrie', name: 'Valkyrie', emoji: '⚔️', elixirCost: 4, rarity: 'rare', type: 'troop', stats: { hp: 900, damage: 130, speed: 0.9, range: 50, attackSpeed: 1.3, splashRadius: 100, flying: false } },
+  musketeer: { id: 'musketeer', name: 'Musketeer', emoji: '🤠', elixirCost: 4, rarity: 'rare', type: 'troop', stats: { hp: 400, damage: 160, speed: 0.95, range: 140, attackSpeed: 1, flying: false } },
+  hogRider: { id: 'hogRider', name: 'Hog Rider', emoji: '🐗', elixirCost: 4, rarity: 'epic', type: 'troop', stats: { hp: 500, damage: 150, speed: 1.5, range: 50, attackSpeed: 1.2, targetBuildings: true, flying: false } },
+  witch: { id: 'witch', name: 'Witch', emoji: '🧙‍♀️', elixirCost: 5, rarity: 'epic', type: 'troop', stats: { hp: 500, damage: 100, speed: 0.85, range: 100, attackSpeed: 1.2, flying: false } },
+  pekka: { id: 'pekka', name: 'P.E.K.K.A', emoji: '🤖', elixirCost: 7, rarity: 'legendary', type: 'troop', stats: { hp: 2000, damage: 300, speed: 0.6, range: 60, attackSpeed: 1.8, flying: false } },
+  bombTower: { id: 'bombTower', name: 'Bomb Tower', emoji: '💣', elixirCost: 5, rarity: 'rare', type: 'building', stats: { hp: 700, damage: 200, range: 130, attackSpeed: 1.2, splashRadius: 100 } },
+  cannon: { id: 'cannon', name: 'Cannon', emoji: '🔫', elixirCost: 3, rarity: 'common', type: 'building', stats: { hp: 400, damage: 150, range: 100, attackSpeed: 1 } },
+  freeze: { id: 'freeze', name: 'Freeze Spell', emoji: '❄️', elixirCost: 4, rarity: 'epic', type: 'spell', stats: { splashRadius: 120, freezeDuration: 2000 } },
+}
+
+const CARD_ARRAY = Object.values(CARDS)
+const ARENA_WIDTH = 600
+const ARENA_HEIGHT = 800
+
+// MEDIEVAL BRIDGE SYSTEM - CRITICAL FOR UNIT MOVEMENT (HORIZONTAL RIVER)
+const BRIDGES = {
+  left: { y1: 360, y2: 440, x: 60, width: 100 },     // Left bridge (vertical, crossing horizontal river)
+  right: { y1: 360, y2: 440, x: 440, width: 100 },   // Right bridge (vertical, crossing horizontal river)
+}
+
+const RIVER_TOP = 360
+const RIVER_BOTTOM = 440
+const RIVER_HEIGHT = RIVER_BOTTOM - RIVER_TOP  // 80px horizontal river
+
+const LANE_WIDTH = ARENA_WIDTH / 2
+const INITIAL_TOWER_HP = { king: 3500, princess: 1800 }
+
+// TIMER CONSTANTS - CRITICAL
+const TOTAL_GAME_TIME_SEC = 180  // 3 minutes
+const EARLY_PHASE_END_SEC = 120   // Early: 180-120s
+const MID_PHASE_END_SEC = 60      // Mid: 120-60s
+const LATE_PHASE_START_SEC = 60   // Late: 60-0s
+
+// ELIXIR GENERATION - CRITICAL
+const ELIXIR_BASE_RATE = 0.5      // 0.5 Elixir per second = 10s to fill 1 elixir
+const ELIXIR_MAX = 10.0
+
+// PHASE ELIXIR MULTIPLIERS
+const ELIXIR_MULTIPLIERS = {
+  early: 1.0,  // 180-120s: 1x rate (normal)
+  mid: 1.0,    // 120-60s: 1x rate (normal)
+  late: 2.0,   // 60-0s: 2x rate (double)
+}
+
+const findNearestEnemy = (unit, enemies, towers) => {
+  let nearest = null, minDist = Infinity
+  const range = unit.stats?.range || 100
+  if (unit.stats?.targetBuildings && enemies.buildings) {
+    enemies.buildings.forEach(b => {
+      if (b && b.hp > 0) {
+        const dist = Math.hypot((b.x || 0) - (unit.x || 0), (b.y || 0) - (unit.y || 0))
+        if (dist < range && dist < minDist) { nearest = b; minDist = dist; }
+      }
+    })
+  }
+  if (unit.stats?.targetBuildings && towers) {
+    towers.forEach(t => {
+      if (t && t.hp > 0) {
+        const dist = Math.hypot((t.x || 0) - (unit.x || 0), (t.y || 0) - (unit.y || 0))
+        if (dist < range && dist < minDist) { nearest = t; minDist = dist; }
+      }
+    })
+  }
+  if (enemies.troops) {
+    enemies.troops.forEach(t => {
+      if (t && t.hp > 0) {
+        const dist = Math.hypot((t.x || 0) - (unit.x || 0), (t.y || 0) - (unit.y || 0))
+        if (dist < range && dist < minDist) { nearest = t; minDist = dist; }
+      }
+    })
+  }
+  return nearest
+}
+
+// Helper: Check if unit is flying
+const isFlying = (unit) => unit.card?.stats?.flying === true
+
+// Helper: Check if position is in river (horizontal river)
+const isInRiver = (y) => y >= RIVER_TOP && y <= RIVER_BOTTOM
+
+const moveUnit = (unit, targetX, targetY, speed = 1) => {
+  if (!unit) return false
+  
+  // Flying units ignore all river restrictions
+  if (isFlying(unit)) {
+    const dist = Math.hypot(targetX - (unit.x || 0), targetY - (unit.y || 0))
+    if (dist < speed) { unit.x = targetX; unit.y = targetY; return true }
+    const ratio = speed / Math.max(dist, 0.1)
+    unit.x += (targetX - (unit.x || 0)) * ratio
+    unit.y += (targetY - (unit.y || 0)) * ratio
+    return false
+  }
+  
+  // Ground units: check if need to cross river (horizontal river blocks vertical movement)
+  const currentInRiver = unit.y >= RIVER_TOP && unit.y <= RIVER_BOTTOM
+  const targetInRiver = targetY >= RIVER_TOP && targetY <= RIVER_BOTTOM
+  const currentSide = unit.y < RIVER_TOP ? 'below' : unit.y > RIVER_BOTTOM ? 'above' : 'river'
+  const targetSide = targetY < RIVER_TOP ? 'below' : targetY > RIVER_BOTTOM ? 'above' : 'river'
+  
+  // If already on bridge or crossing, mark as bridge-crossed
+  if (!unit.bridgeCrossed && currentInRiver && (currentSide === 'river' || (currentSide !== targetSide && targetSide !== 'river'))) {
+    unit.bridgeCrossed = true
+  }
+  
+  // Need to cross river (different sides and target not in river)
+  if (!unit.bridgeCrossed && currentSide !== targetSide && targetSide !== 'river') {
+    // Route through nearest bridge based on x-position
+    const distToLeftBridge = Math.abs(unit.x - BRIDGES.left.x)
+    const distToRightBridge = Math.abs(unit.x - BRIDGES.right.x)
+    
+    const bridgeName = distToLeftBridge < distToRightBridge ? 'left' : 'right'
+    const bridge = BRIDGES[bridgeName]
+    const bridgeCenterX = bridge.x
+    const bridgeCenterY = (bridge.y1 + bridge.y2) / 2
+    
+    // Move to bridge first
+    const distToBridge = Math.hypot(bridgeCenterX - (unit.x || 0), bridgeCenterY - (unit.y || 0))
+    if (distToBridge > speed) {
+      const ratio = speed / Math.max(distToBridge, 0.1)
+      unit.x += (bridgeCenterX - (unit.x || 0)) * ratio
+      unit.y += (bridgeCenterY - (unit.y || 0)) * ratio
+      return false
+    } else {
+      // Reached bridge - mark as crossed
+      unit.x = bridgeCenterX
+      unit.y = bridgeCenterY
+      unit.bridgeCrossed = true
+      return false
+    }
+  }
+  
+  // Normal movement to target
+  const dist = Math.hypot(targetX - (unit.x || 0), targetY - (unit.y || 0))
+  if (dist < speed) { unit.x = targetX; unit.y = targetY; return true }
+  const ratio = speed / Math.max(dist, 0.1)
+  unit.x += (targetX - (unit.x || 0)) * ratio
+  unit.y += (targetY - (unit.y || 0)) * ratio
+  return false
+}
+
+const victoryMessages = ['🎉 Tremendous Victory!', '👑 You are the Champion!', '⚔️ Glorious Battle Won!', '🏆 Legendary Clash!', '💪 Absolutely Dominant!']
+const defeatMessages = ['💭 Close Battle! Try Again!', '🎯 Good Attempt! Try Again!', '🔄 Learn & Adapt!', '💪 Keep Practicing!', '🎮 Battle Lost, War Not Over!']
+
+/**
+ * TIMER FORMATTER - Converts milliseconds to MM:SS format
+ * Critical: Ensures consistent display across all phase changes
+ */
+const formatTime = (totalSeconds) => {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+/**
+ * PHASE CALCULATOR - Determines game phase based on remaining time
+ * Critical: Must be called AFTER timer update
+ */
+const calculatePhase = (remainingSeconds) => {
+  if (remainingSeconds > EARLY_PHASE_END_SEC) return 'early'
+  if (remainingSeconds > MID_PHASE_END_SEC) return 'mid'
+  return 'late'
+}
+
+/**
+ * ELIXIR GENERATION - Calculates elixir regen based on phase
+ * deltaMs: Time elapsed since last update (for accurate framerate-independent regen)
+ */
+const calculateElixirRegen = (phase, deltaMs) => {
+  const phaseMultiplier = ELIXIR_MULTIPLIERS[phase] || 1.0
+  const baseRegenPerMs = (ELIXIR_BASE_RATE / 1000) // Convert to per-millisecond
+  return baseRegenPerMs * phaseMultiplier * deltaMs
+}
+
+function ClashRoyaleGame() {
+  const [screen, setScreen] = useState('menu')
+  const [difficulty, setDifficulty] = useState('medium')
+  const [selectedDeck, setSelectedDeck] = useState([])
+  const [damageNumbers, setDamageNumbers] = useState([])
+  const [dragState, setDragState] = useState({ dragging: null, ghostPos: { x: 0, y: 0 }, dropZoneValid: null, ghostCard: null, placementMode: null })
+  const [cycledCard, setCycledCard] = useState(null)
+
+  // MUTABLE GAME STATE - useRef for performance and accurate mutations
+  const gameStateRef = useRef({
+    // Timer Management (CRITICAL)
+    gameTimeRemainingSec: TOTAL_GAME_TIME_SEC,  // 180 seconds
+    lastUpdateMs: Date.now(),
+    
+    // Elixir Management
+    playerElixir: ELIXIR_MAX,
+    enemyElixir: ELIXIR_MAX,
+    
+    // Game State
+    gameOver: false,
+    winner: null,
+    phase: 'early',
+    
+    // Units
+    playerTroops: [],
+    playerBuildings: [],
+    enemyTroops: [],
+    enemyBuildings: [],
+    
+    // Hand Management
+    playerHand: [],
+    enemyHand: [],
+    lastCardPlayTime: { player: 0, enemy: 0 },
+    
+    // Effects
+    freezeZones: [],
+    destroyedTowers: [],
+  })
+
+  const towerStateRef = useRef({
+    player: {
+      kingTower: { x: ARENA_WIDTH / 2, y: ARENA_HEIGHT - 60, hp: INITIAL_TOWER_HP.king, isKing: true, lastAttackTime: 0 },
+      princessLeft: { x: 100, y: ARENA_HEIGHT - 100, hp: INITIAL_TOWER_HP.princess, lastAttackTime: 0 },
+      princessRight: { x: ARENA_WIDTH - 100, y: ARENA_HEIGHT - 100, hp: INITIAL_TOWER_HP.princess, lastAttackTime: 0 },
+    },
+    enemy: {
+      kingTower: { x: ARENA_WIDTH / 2, y: 60, hp: INITIAL_TOWER_HP.king, isKing: true, lastAttackTime: 0 },
+      princessLeft: { x: 100, y: 100, hp: INITIAL_TOWER_HP.princess, lastAttackTime: 0 },
+      princessRight: { x: ARENA_WIDTH - 100, y: 100, hp: INITIAL_TOWER_HP.princess, lastAttackTime: 0 },
+    },
+  })
+
+  // UI STATE - React state for re-renders
+  const [uiState, setUiState] = useState(0)
+  const [gameStats, setGameStats] = useState({
+    playerHPBars: [],
+    playerBuildingBars: [],
+    enemyHPBars: [],
+    enemyBuildingBars: [],
+    playerElixir: ELIXIR_MAX,
+    enemyElixir: ELIXIR_MAX,
+    gameTimeRemainingSec: TOTAL_GAME_TIME_SEC,
+    phase: 'early',
+    formattedTime: formatTime(TOTAL_GAME_TIME_SEC),
+    towers: {},
+  })
+
+  // Event handlers for drag-drop
+  const handleCardMouseDown = useCallback((e, handItem) => {
+    const card = CARDS[handItem.cardId]
+    const gs = gameStateRef.current
+    const canPlay = gameStats.playerElixir >= card.elixirCost && !gs.gameOver
+    
+    if (!canPlay || e.button !== 0) return
+    
+    setDragState({
+      dragging: handItem.id,
+      ghostCard: card,
+      ghostPos: { x: e.clientX, y: e.clientY },
+      dropZoneValid: null,
+    })
+  }, [gameStats.playerElixir])
+
+  const handleArenaClick = useCallback((e) => {
+    // If in placement mode, place the card
+    if (dragState.placementMode && dragState.ghostCard) {
+      const arenaElement = document.querySelector('.arena-container')
+      if (arenaElement) {
+        const arenaRect = arenaElement.getBoundingClientRect()
+        const relativeX = e.clientX - arenaRect.left
+        const relativeY = e.clientY - arenaRect.top
+        const card = dragState.ghostCard
+
+        // Validate drop position
+        const isWithinArena = relativeX >= 0 && relativeX <= ARENA_WIDTH && relativeY >= 0 && relativeY <= ARENA_HEIGHT
+
+        if (isWithinArena) {
+          // Spells can be placed anywhere
+          if (card.type === 'spell') {
+            playCard(dragState.ghostCard.cardId || dragState.ghostCard.id, true, relativeX, relativeY)
+            setDragState({ dragging: null, ghostPos: { x: 0, y: 0 }, dropZoneValid: null, ghostCard: null, placementMode: null })
+          }
+          // Troops only on player side
+          else if (relativeY >= ARENA_HEIGHT / 2) {
+            playCard(dragState.ghostCard.cardId || dragState.ghostCard.id, true, relativeX, relativeY)
+            setDragState({ dragging: null, ghostPos: { x: 0, y: 0 }, dropZoneValid: null, ghostCard: null, placementMode: null })
+          }
+        }
+      }
+    }
+  }, [dragState.placementMode, dragState.ghostCard, playCard])
+
+  const handleCardDragStart = useCallback((e, handItem, card) => {
+    const gs = gameStateRef.current
+    const canPlay = gameStats.playerElixir >= card.elixirCost && !gs.gameOver
+    
+    if (!canPlay) {
+      e.preventDefault()
+      return
+    }
+    
+    setDragState({
+      dragging: handItem.id,
+      ghostCard: card,
+      ghostPos: { x: e.clientX, y: e.clientY },
+      dropZoneValid: null,
+      placementMode: null,
+    })
+    
+    e.dataTransfer.effectAllowed = 'copy'
+  }, [gameStats.playerElixir])
+
+  const handleCardDragEnd = useCallback((e) => {
+    setDragState(prev => ({
+      ...prev,
+      dragging: null,
+      ghostCard: null,
+      dropZoneValid: null,
+    }))
+  }, [])
+
+  const handleMouseMove = useCallback((e) => {
+    if (!dragState.dragging) return
+    
+    setDragState(prev => ({
+      ...prev,
+      ghostPos: { x: e.clientX, y: e.clientY },
+    }))
+    
+    const arenaElement = document.querySelector('.arena-container')
+    if (arenaElement && dragState.ghostCard) {
+      const rect = arenaElement.getBoundingClientRect()
+      const card = CARDS[dragState.ghostCard.cardId || dragState.ghostCard.id]
+      
+      // Check if mouse is over arena
+      const isOverArena = e.clientX >= rect.left && e.clientX <= rect.right &&
+                         e.clientY >= rect.top && e.clientY <= rect.bottom
+      
+      if (!isOverArena) {
+        setDragState(prev => ({
+          ...prev,
+          dropZoneValid: 'invalid',
+        }))
+        return
+      }
+      
+      // Spells can be placed anywhere on arena
+      if (card && card.type === 'spell') {
+        setDragState(prev => ({
+          ...prev,
+          dropZoneValid: 'valid',
+        }))
+      } else {
+        // Troops only on player side (bottom half)
+        const isPlayerSide = e.clientY >= rect.top + (ARENA_HEIGHT / 2)
+        setDragState(prev => ({
+          ...prev,
+          dropZoneValid: isPlayerSide ? 'valid' : 'invalid',
+        }))
+      }
+    }
+  }, [dragState.dragging])
+
+  const handleMouseUp = useCallback((e) => {
+    if (!dragState.dragging || !dragState.ghostCard) return
+    
+    const arenaElement = document.querySelector('.arena-container')
+    if (arenaElement) {
+      const arenaRect = arenaElement.getBoundingClientRect()
+      const relativeX = e.clientX - arenaRect.left
+      const relativeY = e.clientY - arenaRect.top
+      const card = CARDS[dragState.ghostCard.cardId || dragState.ghostCard.id]
+      
+      // Validate drop position based on card type
+      const isWithinArena = relativeX >= 0 && relativeX <= ARENA_WIDTH && relativeY >= 0 && relativeY <= ARENA_HEIGHT
+      
+      if (isWithinArena && card) {
+        // Spells can be placed anywhere
+        if (card.type === 'spell') {
+          playCard(dragState.ghostCard.cardId || dragState.ghostCard.id, true, relativeX, relativeY)
+        }
+        // Troops only on player side (bottom half)
+        else if (relativeY >= ARENA_HEIGHT / 2) {
+          playCard(dragState.ghostCard.cardId || dragState.ghostCard.id, true, relativeX, relativeY)
+        }
+      }
+    }
+    
+    setDragState({ dragging: null, ghostPos: { x: 0, y: 0 }, dropZoneValid: null, ghostCard: null })
+  }, [dragState.dragging, dragState.ghostCard, playCard])
+
+  useEffect(() => {
+    if (screen !== 'battle') return
+    
+    const handleKeyDown = (e) => {
+      // Escape key to cancel placement mode
+      if (e.key === 'Escape' && dragState.placementMode) {
+        setDragState({ dragging: null, ghostPos: { x: 0, y: 0 }, dropZoneValid: null, ghostCard: null, placementMode: null })
+      }
+    }
+    
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('keydown', handleKeyDown)
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [screen, handleMouseMove, handleMouseUp, dragState.placementMode])
+
+  const playCard = useCallback((cardId, isPlayer = true, spawnX = null, spawnY = null) => {
+    const gs = gameStateRef.current
+    const card = CARDS[cardId]
+    if (!card || !cardId) {
+      console.warn(`Invalid card: ${cardId}`)
+      return
+    }
+
+    const elixir = isPlayer ? gs.playerElixir : gs.enemyElixir
+    if (elixir < card.elixirCost) return
+
+    if (isPlayer) gs.playerElixir -= card.elixirCost
+    else gs.enemyElixir -= card.elixirCost
+
+    const hand = isPlayer ? gs.playerHand : gs.enemyHand
+    const handIdx = hand.findIndex(h => h.cardId === cardId)
+    if (handIdx >= 0) hand.splice(handIdx, 1)
+
+    if (card.type === 'spell') {
+      const side = isPlayer ? 'enemy' : 'player'
+      const targetTroops = side === 'enemy' ? gs.enemyTroops : gs.playerTroops
+      const targetBuildings = side === 'enemy' ? gs.enemyBuildings : gs.playerBuildings
+
+      if (cardId === 'fireball') {
+        const centerX = spawnX || (isPlayer ? ARENA_WIDTH * 0.75 : ARENA_WIDTH * 0.25)
+        const centerY = spawnY || (isPlayer ? ARENA_HEIGHT * 0.3 : ARENA_HEIGHT * 0.7)
+        targetTroops.forEach(t => {
+          if (t && t.hp > 0) {
+            const dist = Math.hypot((t.x || 0) - centerX, (t.y || 0) - centerY)
+            if (dist < 120) { 
+              t.hp -= 400
+              setDamageNumbers(prev => [...prev.slice(-50), { x: t.x, y: t.y, damage: 400, id: Math.random() }])
+            }
+          }
+        })
+        targetBuildings.forEach(b => {
+          if (b && b.hp > 0) {
+            const dist = Math.hypot((b.x || 0) - centerX, (b.y || 0) - centerY)
+            if (dist < 120) b.hp -= 400
+          }
+        })
+      } else if (cardId === 'arrows') {
+        const centerX = spawnX || (isPlayer ? ARENA_WIDTH * 0.75 : ARENA_WIDTH * 0.25)
+        const centerY = spawnY || (isPlayer ? ARENA_HEIGHT * 0.3 : ARENA_HEIGHT * 0.7)
+        targetTroops.forEach(t => {
+          if (t && t.hp > 0) {
+            const dist = Math.hypot((t.x || 0) - centerX, (t.y || 0) - centerY)
+            if (dist < 150) { 
+              t.hp -= 200
+              setDamageNumbers(prev => [...prev.slice(-50), { x: t.x, y: t.y, damage: 200, id: Math.random() }])
+            }
+          }
+        })
+      } else if (cardId === 'freeze') {
+        const centerX = spawnX || (isPlayer ? ARENA_WIDTH * 0.75 : ARENA_WIDTH * 0.25)
+        const centerY = spawnY || (isPlayer ? ARENA_HEIGHT * 0.3 : ARENA_HEIGHT * 0.7)
+        targetTroops.forEach(t => {
+          if (t && t.hp > 0) {
+            const dist = Math.hypot((t.x || 0) - centerX, (t.y || 0) - centerY)
+            if (dist < 120) t.frozen = 2000
+          }
+        })
+      }
+    } else {
+      const troops = isPlayer ? gs.playerTroops : gs.enemyTroops
+      const buildings = isPlayer ? gs.playerBuildings : gs.enemyBuildings
+      const spawnXFinal = spawnX || (isPlayer ? LANE_WIDTH / 2 : LANE_WIDTH + LANE_WIDTH / 2)
+      const spawnYFinal = spawnY || (isPlayer ? ARENA_HEIGHT - 200 : 200)
+
+      if (card.type === 'building') {
+        buildings.push({ id: Math.random(), cardId, card, x: spawnXFinal, y: spawnYFinal, hp: card.stats.hp, lastAttackTime: 0, isPlayer })
+      } else {
+        const count = card.stats.count || 1
+        for (let i = 0; i < count; i++) {
+          troops.push({ id: Math.random(), cardId, card, x: spawnXFinal + (Math.random() - 0.5) * 80, y: spawnYFinal + (Math.random() - 0.5) * 40, hp: card.stats.hp, lastAttackTime: 0, isPlayer })
+        }
+      }
+    }
+  }, [])
+
+  const botPlayCard = useCallback(() => {
+    const gs = gameStateRef.current
+    if (gs.gameOver) return
+
+    const now = Date.now()
+    const hand = gs.enemyHand
+    if (hand.length === 0) return
+
+    let playInterval = 5000
+    if (difficulty === 'medium') playInterval = 4000
+    if (difficulty === 'hard') playInterval = 2500
+
+    if (now - gs.lastCardPlayTime.enemy < playInterval) return
+
+    const playableCards = hand.filter(h => h && h.cardId && gs.enemyElixir >= (CARDS[h.cardId]?.elixirCost || 10))
+    if (playableCards.length === 0) return
+
+    let selectedCard = playableCards[0]
+    if (difficulty === 'hard') {
+      const highValue = playableCards.filter(h => h.cardId && CARDS[h.cardId] && CARDS[h.cardId].elixirCost >= 4)
+      if (highValue.length > 0 && gs.enemyElixir >= 8) {
+        selectedCard = highValue[Math.floor(Math.random() * highValue.length)]
+      }
+    }
+
+    playCard(selectedCard.cardId, false)
+    gs.lastCardPlayTime.enemy = now
+  }, [difficulty, playCard])
+
+  const initializeGame = useCallback(() => {
+    const gs = gameStateRef.current
+    gs.gameTimeRemainingSec = TOTAL_GAME_TIME_SEC
+    gs.lastUpdateMs = Date.now()
+    gs.playerElixir = ELIXIR_MAX
+    gs.enemyElixir = ELIXIR_MAX
+    gs.gameOver = false
+    gs.winner = null
+    gs.playerTroops = []
+    gs.playerBuildings = []
+    gs.enemyTroops = []
+    gs.enemyBuildings = []
+    gs.playerHand = selectedDeck.map(cardId => ({ cardId, id: Math.random() }))
+    gs.enemyHand = CARD_ARRAY.slice(0, 8).map(card => ({ cardId: card.id, id: Math.random() }))
+    gs.lastCardPlayTime = { player: 0, enemy: 0 }
+    gs.freezeZones = []
+    gs.destroyedTowers = []
+    gs.phase = 'early'
+    
+    // Reset towers
+    const towers = towerStateRef.current
+    towers.player.kingTower.hp = INITIAL_TOWER_HP.king
+    towers.player.princessLeft.hp = INITIAL_TOWER_HP.princess
+    towers.player.princessRight.hp = INITIAL_TOWER_HP.princess
+    towers.enemy.kingTower.hp = INITIAL_TOWER_HP.king
+    towers.enemy.princessLeft.hp = INITIAL_TOWER_HP.princess
+    towers.enemy.princessRight.hp = INITIAL_TOWER_HP.princess
+  }, [selectedDeck])
+
+  /**
+   * GAME LOOP - 30fps (33ms interval) for consistent physics
+   * CRITICAL: This is where all timer and elixir calculations happen
+   */
+  useEffect(() => {
+    if (screen !== 'battle') return
+
+    const gameLoopInterval = setInterval(() => {
+      const gs = gameStateRef.current
+      const towers = towerStateRef.current
+      const nowMs = Date.now()
+      
+      if (gs.gameOver) return
+
+      // TIMER UPDATE - CRITICAL FOR ACCURACY
+      const deltaMs = nowMs - gs.lastUpdateMs
+      gs.lastUpdateMs = nowMs
+      
+      // Decrement timer by delta time in seconds
+      gs.gameTimeRemainingSec = Math.max(0, gs.gameTimeRemainingSec - (deltaMs / 1000))
+      
+      // Check if game should end
+      if (gs.gameTimeRemainingSec <= 0) {
+        gs.gameTimeRemainingSec = 0
+        gs.gameOver = true
+        const playerTowerHp = Object.values(towers.player).reduce((sum, t) => sum + t.hp, 0)
+        const enemyTowerHp = Object.values(towers.enemy).reduce((sum, t) => sum + t.hp, 0)
+        gs.winner = enemyTowerHp < playerTowerHp ? 'player' : enemyTowerHp > playerTowerHp ? 'enemy' : 'tie'
+      }
+
+      // UPDATE PHASE - Must be done AFTER timer update
+      const newPhase = calculatePhase(Math.floor(gs.gameTimeRemainingSec))
+      if (newPhase !== gs.phase) {
+        gs.phase = newPhase
+      }
+
+      // ELIXIR GENERATION - Phase-based with accurate delta timing
+      const playerElixirRegen = calculateElixirRegen(gs.phase, deltaMs)
+      const enemyElixirRegen = calculateElixirRegen(gs.phase, deltaMs)
+      
+      gs.playerElixir = Math.min(ELIXIR_MAX, gs.playerElixir + playerElixirRegen)
+      gs.enemyElixir = Math.min(ELIXIR_MAX, gs.enemyElixir + enemyElixirRegen)
+
+      // FREEZE EFFECT UPDATE - Decrement freeze duration
+      gs.playerTroops.forEach(u => { if (u.frozen) u.frozen = Math.max(0, u.frozen - deltaMs) })
+      gs.enemyTroops.forEach(u => { if (u.frozen) u.frozen = Math.max(0, u.frozen - deltaMs) })
+
+      // MOVEMENT PHASE - All units move simultaneously toward targets
+      ;[
+        { units: gs.playerTroops, enemies: { troops: gs.enemyTroops, buildings: gs.enemyBuildings }, enemyTowers: towers.enemy, isPlayer: true },
+        { units: gs.enemyTroops, enemies: { troops: gs.playerTroops, buildings: gs.playerBuildings }, enemyTowers: towers.player, isPlayer: false },
+      ].forEach(({ units, enemies, enemyTowers, isPlayer }) => {
+        units.forEach(unit => {
+          if (!unit || unit.hp <= 0 || (unit.frozen && unit.frozen > 0)) return
+
+          const target = findNearestEnemy(unit, enemies, Object.values(enemyTowers))
+          if (target) {
+            const speed = (unit.card.stats.speed || 1) * (deltaMs / 33)
+            moveUnit(unit, target.x, target.y, speed)
+          } else {
+            // No target - move to enemy side
+            const targetY = isPlayer ? 0 : ARENA_HEIGHT
+            const speed = (unit.card.stats.speed || 1) * 0.5 * (deltaMs / 33)
+            moveUnit(unit, unit.x, targetY, speed)
+          }
+        })
+      })
+
+      // SIMULTANEOUS COMBAT: All units attack at the same time
+      const processCombatRound = (gs, towers, nowMs) => {
+        gs.playerTroops.forEach(unit => {
+          if (!unit || unit.hp <= 0 || (unit.frozen && unit.frozen > 0)) return
+          const target = findNearestEnemy(unit, { troops: gs.enemyTroops, buildings: gs.enemyBuildings }, Object.values(towers.enemy))
+          if (target && Math.hypot((target.x || 0) - (unit.x || 0), (target.y || 0) - (unit.y || 0)) < (unit.card.stats.range || 100)) {
+            const cooldown = 1000 / (unit.card.stats.attackSpeed || 1)
+            if (nowMs - unit.lastAttackTime >= cooldown) {
+              target.hp = Math.max(0, target.hp - (unit.card.stats.damage || 50))
+              unit.lastAttackTime = nowMs
+            }
+          }
+        })
+
+        gs.enemyTroops.forEach(unit => {
+          if (!unit || unit.hp <= 0 || (unit.frozen && unit.frozen > 0)) return
+          const target = findNearestEnemy(unit, { troops: gs.playerTroops, buildings: gs.playerBuildings }, Object.values(towers.player))
+          if (target && Math.hypot((target.x || 0) - (unit.x || 0), (target.y || 0) - (unit.y || 0)) < (unit.card.stats.range || 100)) {
+            const cooldown = 1000 / (unit.card.stats.attackSpeed || 1)
+            if (nowMs - unit.lastAttackTime >= cooldown) {
+              target.hp = Math.max(0, target.hp - (unit.card.stats.damage || 50))
+              unit.lastAttackTime = nowMs
+            }
+          }
+        })
+
+        // BUILDING COMBAT - Auto-attack with splash damage support
+        gs.playerBuildings.forEach(b => {
+          if (!b || b.hp <= 0) return
+          const enemies = gs.enemyTroops.filter(t => Math.hypot(t.x - b.x, t.y - b.y) < (b.card.stats.range || 100))
+          if (enemies.length > 0) {
+            const cooldown = 1000 / (b.card.stats.attackSpeed || 1)
+            if (nowMs - b.lastAttackTime >= cooldown) {
+              const target = enemies[0]
+              const damage = b.card.stats.damage || 50
+              target.hp = Math.max(0, target.hp - damage)
+              
+              // Apply splash damage to nearby units
+              if (b.card.stats.splashRadius) {
+                enemies.forEach(e => {
+                  if (Math.hypot(e.x - target.x, e.y - target.y) < b.card.stats.splashRadius) {
+                    e.hp = Math.max(0, e.hp - (damage * 0.6))
+                  }
+                })
+              }
+              b.lastAttackTime = nowMs
+            }
+          }
+        })
+
+        gs.enemyBuildings.forEach(b => {
+          if (!b || b.hp <= 0) return
+          const enemies = gs.playerTroops.filter(t => Math.hypot(t.x - b.x, t.y - b.y) < (b.card.stats.range || 100))
+          if (enemies.length > 0) {
+            const cooldown = 1000 / (b.card.stats.attackSpeed || 1)
+            if (nowMs - b.lastAttackTime >= cooldown) {
+              const target = enemies[0]
+              const damage = b.card.stats.damage || 50
+              target.hp = Math.max(0, target.hp - damage)
+              
+              // Apply splash damage to nearby units
+              if (b.card.stats.splashRadius) {
+                enemies.forEach(e => {
+                  if (Math.hypot(e.x - target.x, e.y - target.y) < b.card.stats.splashRadius) {
+                    e.hp = Math.max(0, e.hp - (damage * 0.6))
+                  }
+                })
+              }
+              b.lastAttackTime = nowMs
+            }
+          }
+        })
+      }
+
+      // SIMULTANEOUS COMBAT SYSTEM - All units attack at same time
+      processCombatRound(gs, towers, nowMs)
+
+      // TOWER ATTACKS - Defend against enemy units (automatic)
+      const towerAttack = (tower, troops) => {
+        if (tower.hp <= 0) return
+        const range = 150
+        const targets = troops.filter(t => Math.hypot(t.x - tower.x, t.y - tower.y) < range && t.hp > 0)
+        if (targets.length > 0) {
+          const target = targets[0]
+          const attackCooldown = 1250
+          if (nowMs - tower.lastAttackTime >= attackCooldown) {
+            target.hp = Math.max(0, target.hp - 150)
+            tower.lastAttackTime = nowMs
+          }
+        }
+      }
+
+      Object.values(towers.player).forEach(tower => {
+        if (tower) towerAttack(tower, gs.enemyTroops)
+      })
+      Object.values(towers.enemy).forEach(tower => {
+        if (tower) towerAttack(tower, gs.playerTroops)
+      })
+
+      // CLEANUP DEAD UNITS - Remove units with HP <= 0 (Death Handling)
+      gs.playerTroops = gs.playerTroops.filter(u => u && u.hp > 0)
+      gs.enemyTroops = gs.enemyTroops.filter(u => u && u.hp > 0)
+      gs.playerBuildings = gs.playerBuildings.filter(u => u && u.hp > 0)
+      gs.enemyBuildings = gs.enemyBuildings.filter(u => u && u.hp > 0)
+
+      // PERFORMANCE OPTIMIZATION - Keep unit count under 50 per side for 30fps stability
+      if (gs.playerTroops.length + gs.playerBuildings.length > 50) {
+        const excess = gs.playerTroops.length + gs.playerBuildings.length - 50
+        gs.playerTroops.splice(0, Math.min(excess, gs.playerTroops.length))
+      }
+      if (gs.enemyTroops.length + gs.enemyBuildings.length > 50) {
+        const excess = gs.enemyTroops.length + gs.enemyBuildings.length - 50
+        gs.enemyTroops.splice(0, Math.min(excess, gs.enemyTroops.length))
+      }
+
+      // CHECK WIN CONDITIONS
+      if (towers.player.kingTower.hp <= 0) { gs.gameOver = true; gs.winner = 'enemy' }
+      if (towers.enemy.kingTower.hp <= 0) { gs.gameOver = true; gs.winner = 'player' }
+
+      botPlayCard()
+
+      const cycleIndex = gs.playerHand.length > 0 ? (gs.playerHand.length - 1) % 8 : null
+      setCycledCard(cycleIndex === 0 ? 0 : null)
+
+      // UPDATE UI STATE with current game stats
+      setGameStats({
+        playerElixir: Math.floor(gs.playerElixir * 10) / 10,
+        enemyElixir: Math.floor(gs.enemyElixir * 10) / 10,
+        gameTimeRemainingSec: Math.floor(gs.gameTimeRemainingSec),
+        formattedTime: formatTime(Math.floor(gs.gameTimeRemainingSec)),
+        phase: gs.phase,
+        towers: {
+          playerKing: towers.player.kingTower.hp,
+          playerLeftPrincess: towers.player.princessLeft.hp,
+          playerRightPrincess: towers.player.princessRight.hp,
+          enemyKing: towers.enemy.kingTower.hp,
+          enemyLeftPrincess: towers.enemy.princessLeft.hp,
+          enemyRightPrincess: towers.enemy.princessRight.hp,
+        },
+        playerHPBars: gs.playerTroops.map(u => ({ id: u.id, hp: u.hp, maxHp: u.card.stats.hp, x: u.x, y: u.y })),
+        playerBuildingBars: gs.playerBuildings.map(b => ({ id: b.id, hp: b.hp, maxHp: b.card.stats.hp, x: b.x, y: b.y })),
+        enemyHPBars: gs.enemyTroops.map(u => ({ id: u.id, hp: u.hp, maxHp: u.card.stats.hp, x: u.x, y: u.y })),
+        enemyBuildingBars: gs.enemyBuildings.map(b => ({ id: b.id, hp: b.hp, maxHp: b.card.stats.hp, x: b.x, y: b.y })),
+      })
+
+      setUiState(prev => prev + 1)
+    }, 33) // 30fps for smooth gameplay
+
+    return () => {
+      if (gameLoopInterval) clearInterval(gameLoopInterval)
+    }
+  }, [screen, botPlayCard])
+
+  const renderArena = () => {
+    const gs = gameStateRef.current
+    const towers = towerStateRef.current
+
+    return (
+      <div className="arena-container relative shadow-2xl" style={{ 
+        width: ARENA_WIDTH, 
+        height: ARENA_HEIGHT,
+        background: `
+          linear-gradient(180deg, 
+            #5a7a6a 0%, 
+            #6b8b7b 25%,
+            #5a7a6a 50%,
+            #4a6a5a 75%,
+            #5a7a6a 100%)
+        `,
+        position: 'relative',
+        cursor: dragState.placementMode ? 'crosshair' : 'default',
+        border: '4px solid #3d2817',
+        boxShadow: 'inset 0 0 30px rgba(0,0,0,0.5), 0 10px 40px rgba(0,0,0,0.8)'
+      }}
+      onClick={handleArenaClick}
+      onMouseMove={(e) => {
+        handleMouseMove(e)
+        if (dragState.placementMode) {
+          const arenaElement = document.querySelector('.arena-container')
+          if (arenaElement) {
+            const rect = arenaElement.getBoundingClientRect()
+            setDragState(prev => ({
+              ...prev,
+              ghostPos: { x: e.clientX, y: e.clientY }
+            }))
+          }
+        }
+      }}
+      >
+        {/* Stone Texture Overlay */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect x=%220%22 y=%220%22 width=%2250%22 height=%2250%22 fill=%22%234a5a4a%22/%3E%3Crect x=%2250%22 y=%220%22 width=%2250%22 height=%2250%22 fill=%22%235a6a5a%22/%3E%3Crect x=%220%22 y=%2250%22 width=%2250%22 height=%2250%22 fill=%22%235a6a5a%22/%3E%3Crect x=%2250%22 y=%2250%22 width=%2250%22 height=%2250%22 fill=%22%234a5a4a%22/%3E%3C/svg%3E")',
+          opacity: 0.2,
+          pointerEvents: 'none'
+        }} />
+        
+        {/* Player Side (Bottom) */}
+        <div style={{
+          position: 'absolute',
+          width: '100%',
+          height: '50%',
+          bottom: 0,
+          background: 'linear-gradient(180deg, rgba(100,120,100,0.1) 0%, rgba(70,90,70,0.2) 100%)',
+          borderTop: '2px solid rgba(0,0,0,0.3)'
+        }} />
+        
+        {/* Enemy Side (Top) */}
+        <div style={{
+          position: 'absolute',
+          width: '100%',
+          height: '50%',
+          top: 0,
+          background: 'linear-gradient(180deg, rgba(80,100,80,0.2) 0%, rgba(100,120,100,0.1) 100%)',
+          borderBottom: '2px solid rgba(0,0,0,0.3)'
+        }} />
+        
+        {/* River - Horizontal (center, y: 360-440) */}
+        <div style={{
+          position: 'absolute',
+          left: 0,
+          top: RIVER_TOP,
+          width: ARENA_WIDTH,
+          height: RIVER_HEIGHT,
+          background: `
+            linear-gradient(180deg,
+              rgba(41, 82, 101, 0.85) 0%,
+              rgba(20, 50, 70, 0.95) 20%,
+              rgba(15, 42, 61, 1) 50%,
+              rgba(20, 50, 70, 0.95) 80%,
+              rgba(41, 82, 101, 0.85) 100%)
+          `,
+          boxShadow: 'inset 0 0 30px rgba(0, 0, 0, 0.8), inset 0 -4px 15px rgba(0,0,0,0.4), inset 0 4px 15px rgba(0,0,0,0.4)',
+          overflow: 'hidden'
+        }}>
+          {/* Water Flow Animation - Horizontal waves */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: `
+              linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(100, 150, 200, 0.15) 25%,
+                rgba(50, 100, 150, 0.1) 50%,
+                rgba(100, 150, 200, 0.15) 75%,
+                transparent 100%)
+            `,
+            animation: 'water-flow 8s linear infinite',
+            opacity: 0.6
+          }} />
+          
+          {/* Water Shimmer Effect */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: `
+              repeating-linear-gradient(90deg,
+                rgba(255, 255, 255, 0.03) 0px,
+                transparent 2px,
+                transparent 4px,
+                rgba(255, 255, 255, 0.01) 6px)
+            `,
+            animation: 'water-flow 4s linear infinite reverse',
+            opacity: 0.8
+          }} />
+        </div>
+
+        {/* Left Bridge (vertical, over horizontal river) */}
+        <div style={{
+          position: 'absolute',
+          left: BRIDGES.left.x,
+          top: BRIDGES.left.y1,
+          width: BRIDGES.left.width,
+          height: BRIDGES.left.y2 - BRIDGES.left.y1,
+          background: 'linear-gradient(90deg, #A0826D 0%, #8B6F47 30%, #6B5437 60%, #5B4427 100%)',
+          border: '2px solid #3D2817',
+          boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.3), 0 6px 16px rgba(0,0,0,0.8), 0 0 20px rgba(139, 69, 19, 0.3)',
+          borderRadius: '2px',
+          className: 'bridge-glow'
+        }}>
+          {/* Wood Planks Pattern */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 15px, rgba(0,0,0,0.15) 15px, rgba(0,0,0,0.15) 18px)',
+            borderRadius: '2px'
+          }} />
+          {/* Wood Grain */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'repeating-linear-gradient(90deg, transparent 0px, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px)',
+            borderRadius: '2px',
+            opacity: 0.7
+          }} />
+        </div>
+
+        {/* Right Bridge (vertical, over horizontal river) */}
+        <div style={{
+          position: 'absolute',
+          left: BRIDGES.right.x,
+          top: BRIDGES.right.y1,
+          width: BRIDGES.right.width,
+          height: BRIDGES.right.y2 - BRIDGES.right.y1,
+          background: 'linear-gradient(90deg, #A0826D 0%, #8B6F47 30%, #6B5437 60%, #5B4427 100%)',
+          border: '2px solid #3D2817',
+          boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.3), 0 6px 16px rgba(0,0,0,0.8), 0 0 20px rgba(139, 69, 19, 0.3)',
+          borderRadius: '2px',
+          className: 'bridge-glow'
+        }}>
+          {/* Wood Planks Pattern */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 15px, rgba(0,0,0,0.15) 15px, rgba(0,0,0,0.15) 18px)',
+            borderRadius: '2px'
+          }} />
+          {/* Wood Grain */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'repeating-linear-gradient(90deg, transparent 0px, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px)',
+            borderRadius: '2px',
+            opacity: 0.7
+          }} />
+        </div>
+
+        {dragState.dragging && dragState.ghostCard && (
+          <>
+            {dragState.dropZoneValid === 'valid' && (
+              <div className="absolute inset-0 pointer-events-none valid-zone" style={{
+                background: CARDS[dragState.ghostCard.cardId || dragState.ghostCard.id]?.type === 'spell' 
+                  ? 'radial-gradient(circle at var(--mouse-x, 50%), rgba(34, 197, 94, 0.15) 0%, transparent 60%)' 
+                  : 'linear-gradient(to top, rgba(34, 197, 94, 0.2) 0%, transparent 50%)',
+              }} />
+            )}
+            {dragState.dropZoneValid === 'invalid' && (
+              <div className="absolute inset-0 pointer-events-none invalid-zone" style={{
+                background: CARDS[dragState.ghostCard.cardId || dragState.ghostCard.id]?.type === 'spell' 
+                  ? 'radial-gradient(circle at var(--mouse-x, 50%), rgba(239, 68, 68, 0.15) 0%, transparent 60%)' 
+                  : 'linear-gradient(to top, rgba(239, 68, 68, 0.15) 0%, transparent 50%)',
+              }} />
+            )}
+          </>
+        )}
+
+        <div className="absolute tower-king" style={{ left: towers.enemy.kingTower.x - 16, top: towers.enemy.kingTower.y - 20, width: 32, height: 40, borderRadius: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '24px' }}>👑</div>
+          <div style={{ position: 'absolute', top: -25, left: '50%', transform: 'translateX(-50%)', fontSize: '10px', fontWeight: 'bold', color: '#fff', textShadow: '1px 1px 2px #000', whiteSpace: 'nowrap' }}>{Math.max(0, Math.floor(towers.enemy.kingTower.hp))}</div>
+        </div>
+        <div className="absolute tower-princess" style={{ left: towers.enemy.princessLeft.x - 12, top: towers.enemy.princessLeft.y - 16, width: 24, height: 32, borderRadius: 6 }}>
+          <div style={{ fontSize: '16px' }}>🏰</div>
+          <div style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 'bold', color: '#fff', textShadow: '1px 1px 2px #000' }}>{Math.max(0, Math.floor(towers.enemy.princessLeft.hp))}</div>
+        </div>
+        <div className="absolute tower-princess" style={{ left: towers.enemy.princessRight.x - 12, top: towers.enemy.princessRight.y - 16, width: 24, height: 32, borderRadius: 6 }}>
+          <div style={{ fontSize: '16px' }}>🏰</div>
+          <div style={{ position: 'absolute', top: -20, left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 'bold', color: '#fff', textShadow: '1px 1px 2px #000' }}>{Math.max(0, Math.floor(towers.enemy.princessRight.hp))}</div>
+        </div>
+
+        <div className="absolute tower-king" style={{ left: towers.player.kingTower.x - 16, top: towers.player.kingTower.y - 20, width: 32, height: 40, borderRadius: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '24px' }}>👑</div>
+          <div style={{ position: 'absolute', bottom: -25, left: '50%', transform: 'translateX(-50%)', fontSize: '10px', fontWeight: 'bold', color: '#fff', textShadow: '1px 1px 2px #000', whiteSpace: 'nowrap' }}>{Math.max(0, Math.floor(towers.player.kingTower.hp))}</div>
+        </div>
+        <div className="absolute tower-princess" style={{ left: towers.player.princessLeft.x - 12, top: towers.player.princessLeft.y - 16, width: 24, height: 32, borderRadius: 6 }}>
+          <div style={{ fontSize: '16px' }}>🏰</div>
+          <div style={{ position: 'absolute', bottom: -20, left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 'bold', color: '#fff', textShadow: '1px 1px 2px #000' }}>{Math.max(0, Math.floor(towers.player.princessLeft.hp))}</div>
+        </div>
+        <div className="absolute tower-princess" style={{ left: towers.player.princessRight.x - 12, top: towers.player.princessRight.y - 16, width: 24, height: 32, borderRadius: 6 }}>
+          <div style={{ fontSize: '16px' }}>🏰</div>
+          <div style={{ position: 'absolute', bottom: -20, left: '50%', transform: 'translateX(-50%)', fontSize: '9px', fontWeight: 'bold', color: '#fff', textShadow: '1px 1px 2px #000' }}>{Math.max(0, Math.floor(towers.player.princessRight.hp))}</div>
+        </div>
+
+        {gs.enemyTroops.map(unit => <div key={unit.id} className="absolute w-6 h-6 bg-red-500 rounded-full border border-yellow-300 flex items-center justify-center text-xs font-bold shadow-lg" style={{ left: unit.x - 12, top: unit.y - 12 }}>{unit.card.emoji}</div>)}
+        {gs.playerTroops.map(unit => <div key={unit.id} className="absolute w-6 h-6 bg-blue-500 rounded-full border border-yellow-300 flex items-center justify-center text-xs font-bold shadow-lg card-spawn" style={{ left: unit.x - 12, top: unit.y - 12 }}>{unit.card.emoji}</div>)}
+
+        {gameStats.playerHPBars.map(bar => <div key={`hp-${bar.id}`} className="absolute w-10 h-1 bg-red-900 rounded" style={{ left: bar.x - 20, top: bar.y - 20 }}><div className="h-full bg-green-500 rounded transition-all" style={{ width: `${Math.max(0, (bar.hp / bar.maxHp) * 100)}%` }} /></div>)}
+        {gameStats.enemyHPBars.map(bar => <div key={`hp-${bar.id}`} className="absolute w-10 h-1 bg-red-900 rounded" style={{ left: bar.x - 20, top: bar.y - 20 }}><div className="h-full bg-green-500 rounded transition-all" style={{ width: `${Math.max(0, (bar.hp / bar.maxHp) * 100)}%` }} /></div>)}
+
+        {damageNumbers.map((dmg, i) => <div key={i} className="absolute text-red-500 font-bold damage-number" style={{ left: dmg.x, top: dmg.y }}>-{dmg.damage}</div>)}
+        
+        {/* Placement Mode Indicator */}
+        {dragState.placementMode && dragState.ghostCard && (
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(147, 51, 234, 0.9)',
+            color: '#fff',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            textShadow: '1px 1px 2px #000',
+            zIndex: 100,
+            animation: 'pulse 1s infinite',
+            textAlign: 'center'
+          }}>
+            Click auf der Karte um {dragState.ghostCard.name} zu platzieren<br/>
+            <span style={{ fontSize: '11px', opacity: 0.9 }}>ESC zum Abbrechen</span>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  /**
+   * GET TIMER STYLE CLASS - Premium styling based on phase
+   */
+  const getTimerClass = () => {
+    const remaining = gameStats.gameTimeRemainingSec
+    if (remaining > 60) return 'timer-early'
+    if (remaining > 10) return 'timer-mid'
+    if (remaining > 0) return 'timer-late'
+    return 'timer-final'
+  }
+
+  /**
+   * GET ELIXIR REGEN TEXT - Shows current regen rate
+   */
+  const getElixirRegenText = () => {
+    const multiplier = ELIXIR_MULTIPLIERS[gameStats.phase]
+    const rate = ELIXIR_BASE_RATE * multiplier
+    return `${rate.toFixed(1)}/s`
+  }
+
+  const getElixirRegenClass = () => {
+    if (gameStats.phase === 'early') return 'elixir-regen-early'
+    if (gameStats.phase === 'mid') return 'elixir-regen-mid'
+    return 'elixir-regen-late'
+  }
+
+  const renderUI = () => {
+    const gs = gameStateRef.current
+    const towers = towerStateRef.current
+
+    const rarityColors = {
+      common: '#C9A961',
+      rare: '#4A9FD8',
+      epic: '#A855F7',
+      legendary: '#FFB84D'
+    }
+    const rarityBorderColors = {
+      common: '#E8D5B7',
+      rare: '#6EB5E8',
+      epic: '#D4AAFF',
+      legendary: '#FFB84D'
+    }
+
+    return (
+      <div className="w-full max-w-2xl">
+        {/* HUD - Top Bar with Timer */}
+        <div className="flex justify-between items-center bg-gray-900 text-white p-4 rounded-t border-2 border-yellow-600 gap-4">
+          {/* Enemy Towers */}
+          <div className="flex gap-3">
+            <div className="flex gap-1 items-center"><span className="text-lg">❤️</span><span className="text-sm font-bold">{Math.max(0, Math.floor(towers.enemy.kingTower.hp))}</span></div>
+            <div className="flex gap-1 items-center"><span className="text-lg">🏰</span><span className="text-sm font-bold">{Math.max(0, Math.floor(towers.enemy.princessLeft.hp))}</span></div>
+            <div className="flex gap-1 items-center"><span className="text-lg">🏰</span><span className="text-sm font-bold">{Math.max(0, Math.floor(towers.enemy.princessRight.hp))}</span></div>
+          </div>
+
+          {/* Timer with Phase Indicator */}
+          <div className="flex flex-col items-center gap-1">
+            <div className={`timer-display ${getTimerClass()}`}>
+              {gameStats.formattedTime}
+            </div>
+            <div className={`phase-badge ${gameStats.phase}`}>
+              {gameStats.phase === 'early' && '⏱️ Early'}
+              {gameStats.phase === 'mid' && '⚡ Mid'}
+              {gameStats.phase === 'late' && '🔥 Late'}
+            </div>
+          </div>
+
+          {/* Player Towers */}
+          <div className="flex gap-3">
+            <div className="flex gap-1 items-center"><span className="text-lg">❤️</span><span className="text-sm font-bold">{Math.max(0, Math.floor(towers.player.kingTower.hp))}</span></div>
+            <div className="flex gap-1 items-center"><span className="text-lg">🏰</span><span className="text-sm font-bold">{Math.max(0, Math.floor(towers.player.princessLeft.hp))}</span></div>
+            <div className="flex gap-1 items-center"><span className="text-lg">🏰</span><span className="text-sm font-bold">{Math.max(0, Math.floor(towers.player.princessRight.hp))}</span></div>
+          </div>
+        </div>
+
+        <div className="flex justify-center">{renderArena()}</div>
+
+        {/* Elixir Bar with Phase Info */}
+        <div className="bg-gray-900 text-white p-3 flex items-center gap-3 border-x-2 border-yellow-600">
+          <span className="text-sm font-bold w-12">Elixir</span>
+          <div className="flex-1">
+            <div className="bg-gray-800 rounded h-6 border-2 border-purple-500 relative overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-purple-600 to-purple-400 transition-all" style={{ width: `${(gameStats.playerElixir / ELIXIR_MAX) * 100}%` }} />
+              <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">{Math.floor(gameStats.playerElixir)}/{ELIXIR_MAX}</span>
+            </div>
+            <div className={`elixir-regen-text ${getElixirRegenClass()}`}>
+              Regen: {getElixirRegenText()} ({gameStats.phase.toUpperCase()})
+            </div>
+          </div>
+        </div>
+
+        {/* 4-Card Hand Container */}
+        <div className="hand-container">
+          {gs.playerHand.map((handItem, idx) => {
+            if (!handItem || !handItem.cardId || !CARDS[handItem.cardId]) return null
+            const card = CARDS[handItem.cardId]
+            const canPlay = gameStats.playerElixir >= card.elixirCost && !gs.gameOver
+            const isDragging = dragState.dragging === handItem.id
+            const isCycleNext = cycledCard === idx
+            
+            return (
+              <div
+                key={handItem.id}
+                draggable={canPlay}
+                onDragStart={(e) => handleCardDragStart(e, handItem, card)}
+                onDragEnd={(e) => handleCardDragEnd(e)}
+                onMouseDown={(e) => {
+                  if (canPlay && e.button === 0) {
+                    handleCardMouseDown(e, handItem)
+                  }
+                }}
+                onClick={() => {
+                  if (canPlay) {
+                    // Activate placement mode instead of auto-playing
+                    setDragState({
+                      dragging: null,
+                      ghostPos: { x: 0, y: 0 },
+                      dropZoneValid: null,
+                      ghostCard: card,
+                      placementMode: handItem.id
+                    })
+                  }
+                }}
+                className={`hand-card ${canPlay ? 'can-play' : 'cannot-play'} ${isDragging ? 'dragging' : ''} rarity-${card.rarity}`}
+                style={{
+                  borderColor: isDragging ? 'rgba(147, 51, 234, 0.8)' : rarityBorderColors[card.rarity] || '#E8D5B7',
+                  cursor: canPlay ? 'grab' : 'not-allowed',
+                  opacity: isDragging ? 0.4 : 1,
+                  filter: isDragging ? 'grayscale(100%) brightness(0.7)' : 'brightness(1)',
+                  transform: isDragging ? 'scale(0.95)' : 'scale(1)',
+                  position: 'relative',
+                }}
+              >
+                <div className="hand-card-rarity" style={{
+                  borderColor: rarityBorderColors[card.rarity],
+                  backgroundColor: rarityColors[card.rarity],
+                  color: card.rarity === 'legendary' ? '#000' : '#fff',
+                  opacity: 0.95,
+                }}>
+                  {'⭐'}
+                </div>
+
+                <span className="hand-card-emoji">{card.emoji}</span>
+
+                <div className="hand-card-name">{card.name.length > 8 ? card.name.slice(0, 7) + '.' : card.name}</div>
+
+                <div className="hand-card-cost">
+                  <span>{card.elixirCost}</span>
+                  <span style={{ fontSize: '10px' }}>⚡</span>
+                </div>
+
+                {isCycleNext && (
+                  <div className="cycle-indicator active" title="Next in deck cycle" />
+                )}
+              </div>
+            )
+          })}
+        </div>
+        
+        {/* Drag Ghost */}
+        {dragState.dragging && dragState.ghostCard && (
+          <div
+            className="drag-ghost drag-float"
+            style={{
+              left: `${dragState.ghostPos.x - 45}px`,
+              top: `${dragState.ghostPos.y - 50}px`,
+              width: '90px',
+              padding: '10px',
+              borderRadius: '10px',
+              border: '2px solid rgba(147, 51, 234, 0.8)',
+              background: `linear-gradient(135deg, rgba(55, 65, 81, 0.95) 0%, rgba(31, 41, 55, 0.98) 100%)`,
+              boxShadow: '0 15px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(147, 51, 234, 0.6)',
+              textAlign: 'center',
+              zIndex: 1000,
+              pointerEvents: 'none',
+            }}
+          >
+            <div style={{ fontSize: '28px', marginBottom: '4px' }}>{dragState.ghostCard.emoji}</div>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: '700',
+              color: '#fff',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              marginBottom: '3px'
+            }}>
+              {dragState.ghostCard.name.length > 8 ? dragState.ghostCard.name.slice(0, 7) + '.' : dragState.ghostCard.name}
+            </div>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: '#FCD34D' }}>
+              {dragState.ghostCard.elixirCost}⚡
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (screen === 'menu') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-white p-4">
+        <div className="text-6xl font-bold mb-4 text-yellow-400 float">⚔️ Clash Royale</div>
+        <div className="text-2xl mb-8 text-gray-300">Premium Architecture Edition</div>
+        <div className="mb-6"><p className="text-lg mb-4">Select Difficulty:</p><div className="flex gap-4">
+          {['easy', 'medium', 'hard'].map(diff => <button key={diff} onClick={() => setDifficulty(diff)} className={`px-6 py-3 rounded-lg font-bold transition-all ${difficulty === diff ? 'bg-yellow-500 text-black scale-110 pulse-glow' : 'bg-gray-700 text-white hover:bg-gray-600'}`}>{diff.toUpperCase()}</button>)}
+        </div></div>
+        <button onClick={() => { setSelectedDeck([]); setScreen('deckBuilder') }} className="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg rounded-lg hover:shadow-lg hover:scale-105 transition-all">Build Deck</button>
+      </div>
+    )
+  }
+
+  if (screen === 'deckBuilder') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-4 overflow-y-auto">
+        <h1 className="text-4xl font-bold mb-2 text-yellow-400">Build Your Deck</h1>
+        <p className="text-lg mb-6">Select exactly 8 cards (Current: {selectedDeck.length}/8)</p>
+        <div className="mb-6 text-center"><p className="text-lg">Average Elixir: {selectedDeck.length > 0 ? (selectedDeck.reduce((sum, cardId) => sum + CARDS[cardId].elixirCost, 0) / selectedDeck.length).toFixed(1) : 0}</p></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 max-w-4xl">
+          {CARD_ARRAY.map(card => {
+            const isSelected = selectedDeck.includes(card.id)
+            return (
+              <button key={card.id} onClick={() => { if (isSelected) setSelectedDeck(selectedDeck.filter((cid, idx) => !(cid === card.id && selectedDeck.indexOf(cid) === idx))); else if (selectedDeck.length < 8) setSelectedDeck([...selectedDeck, card.id]) }}
+                className={`p-3 rounded-lg border-2 transition-all card-spawn ${isSelected ? `border-yellow-400 shadow-lg scale-105 rarity-${card.rarity}` : `border-gray-600 bg-gray-800 hover:border-gray-400 rarity-${card.rarity}`}`}>
+                <div className="text-3xl mb-2">{card.emoji}</div>
+                <div className="text-xs font-bold">{card.name}</div>
+                <div className="text-xs text-yellow-300">{card.elixirCost}⚡</div>
+                <div className="text-xs text-gray-400">{card.type}</div>
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex gap-4">
+          <button onClick={() => { setSelectedDeck([]); setScreen('menu') }} className="px-6 py-3 bg-gray-700 text-white font-bold rounded-lg hover:bg-gray-600 transition-all">Back</button>
+          <button onClick={() => { if (selectedDeck.length === 8) { initializeGame(); setScreen('battle') } }} disabled={selectedDeck.length !== 8} className={`px-8 py-3 font-bold rounded-lg transition-all ${selectedDeck.length === 8 ? 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-lg hover:scale-105 cursor-pointer' : 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-50'}`}>Start Battle</button>
+        </div>
+      </div>
+    )
+  }
+
+  if (screen === 'battle') {
+    if (gameStateRef.current.gameOver) {
+      const gs = gameStateRef.current
+      const towers = towerStateRef.current
+      const playerTowerHp = Object.values(towers.player).reduce((sum, t) => sum + t.hp, 0)
+      const enemyTowerHp = Object.values(towers.enemy).reduce((sum, t) => sum + t.hp, 0)
+      const actualWinner = enemyTowerHp < playerTowerHp ? 'player' : enemyTowerHp > playerTowerHp ? 'enemy' : 'tie'
+
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen text-white p-4">
+          <div className={`text-5xl font-bold mb-4 victory-popup ${actualWinner === 'player' ? 'text-green-400' : actualWinner === 'tie' ? 'text-yellow-400' : 'text-red-400'}`}>
+            {actualWinner === 'player' ? victoryMessages[Math.floor(Math.random() * victoryMessages.length)] : actualWinner === 'tie' ? '⚔️ Tied Battle!' : defeatMessages[Math.floor(Math.random() * defeatMessages.length)]}
+          </div>
+          <div className="text-2xl mb-6">Your Towers: {Math.max(0, Math.floor(playerTowerHp))} HP<br />Enemy Towers: {Math.max(0, Math.floor(enemyTowerHp))} HP</div>
+          <button onClick={() => setScreen('menu')} className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg rounded-lg hover:shadow-lg hover:scale-105 transition-all">Play Again</button>
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-white p-4">
+        {renderUI()}
+      </div>
+    )
+  }
+
+  return null
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<ClashRoyaleGame />);
+  </script>
+</body>
+</html>
